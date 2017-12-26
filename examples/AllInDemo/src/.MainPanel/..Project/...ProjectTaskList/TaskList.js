@@ -118,6 +118,7 @@ export const TaskList = InjectSourcesAndSettings({ sourceFactory: taskListStateF
         // SinkMap({map: ...}, Task} : could be extended to a postprocessing function of `m`
         // m, preconditions, preprocessing (makeExtraSources...), main, postconditions,
         // postprocessing (to be named)
+        // TRACE could be an example of postprocessing!
         list: 'filteredTasks', as: 'filteredTask', buildActionsFromChildrenSinks: {
           isChecked$: computeTaskCheckedActions,
           save$: computeSaveUpdatedTaskActions

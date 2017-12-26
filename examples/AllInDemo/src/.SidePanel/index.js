@@ -119,6 +119,7 @@ export const SidePanel =
       // except that we do not have to define that AD-HOC combinator
       // I'd rather have for now only the GENERAL combinator as combinators
       // TODO : but maybe that's the way to go??
+  // TODO : refactor m({}, {}, [Navigation...) to Navigation({},[])
       m({}, { title: 'Main' }, [NavigationSection, [
         m({}, { project: { title: 'Dashboard', link: 'dashboard' } }, [NavigationItem])
       ]]),
