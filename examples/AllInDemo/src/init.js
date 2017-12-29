@@ -30,9 +30,6 @@ export function initLocallyPersistedState(repository) {
 
 export function initLocalNonPersistedState() {
   return {
-    [TASK_TAB_BUTTON_GROUP_STATE]: {
-      filter: TASK_TAB_BUTTON_GROUP_INIT_FILTER
-    }
   }
 }
 

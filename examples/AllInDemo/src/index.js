@@ -2,8 +2,6 @@ import { App } from "./app"
 import defaultModules from "cycle-snabbdom/lib/modules"
 import { createHistory } from "history"
 import firebase from 'firebase'
-// drivers
-import { makeFirebaseDriver, makeQueueDriver, } from '@sparksnetwork/cyclic-fire'
 import { run } from "@cycle/core"
 import { makeDOMDriver } from "cycle-snabbdom"
 import { makeHistoryDriver } from '@cycle/history';
@@ -11,19 +9,17 @@ import { domainActionsConfig, domainObjectsQueryMap } from './domain/index';
 import { inMemoryStoreActionsConfig, inMemoryStoreQueryMap } from './inMemoryStore';
 import { makeDomainQueryDriver } from './domain/queryDriver/index';
 import { makeDomainActionDriver } from './domain/actionDriver';
-import { focusDriver } from '../../../src/drivers/focusDriver';
 import { documentDriver } from '../../../src/drivers/documentDriver';
+import { DOM_SINK, filterNull } from "../../../src/utils"
 import {
   initLocallyPersistedState, initLocalNonPersistedState, initRemotelyPersistedState, initRepository
 } from './init'
-// utils
-import { DOM_SINK, filterNull } from "../../../src/utils"
 
 const repository = initRepository(firebase);
 const fbRoot = repository;
 const inMemoryStore = initLocalNonPersistedState();
 
-// Initialize database if empty
+// Initialize database if empty : this is only for demo purpose, in real app, data is already there
 // NOTE: state initialization could be done in parallel instead of sequentially
 initRemotelyPersistedState(repository)
   .then(initLocallyPersistedState())
@@ -34,13 +30,11 @@ initRemotelyPersistedState(repository)
         modules: defaultModules
       })),
       document: documentDriver,
-      queue$: makeQueueDriver(fbRoot.child('!queue'), 'responses', 'tasks', { debug: true }),
       domainQuery: makeDomainQueryDriver(repository, domainObjectsQueryMap),
       domainAction$: makeDomainActionDriver(repository, domainActionsConfig),
       storeAccess: makeDomainQueryDriver(inMemoryStore, inMemoryStoreQueryMap),
       storeUpdate$: makeDomainActionDriver(inMemoryStore, inMemoryStoreActionsConfig),
       router: makeHistoryDriver(createHistory(), { capture: true }),
-      focus: focusDriver,
     });
 
     // Webpack specific code
