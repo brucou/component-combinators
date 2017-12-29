@@ -36,7 +36,7 @@ export const App = InjectSourcesAndSettings({
         // NOTE : domain driver always send behaviour observables (i.e. sharedReplayed already)
         user$,
         // NOTE : `values` to get the actual array because firebase wraps it around indices
-        projects$: projects$.map(values),
+        projects$: projects$.map(values).shareReplay(1),
         projectsFb$: projects$
       }
     },
