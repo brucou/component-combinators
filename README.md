@@ -134,7 +134,7 @@ export const App = InjectSources({
 
 ```
 
-The iteration logic are taken care of with the `ForEach` and the `ListOf` combinators.
+The iteration logic is taken care of with the `ForEach` and the `ListOf` combinators.
 
 # Combinators
 ## Syntax
