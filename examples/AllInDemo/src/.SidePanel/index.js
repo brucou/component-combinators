@@ -39,9 +39,6 @@ function getProjectNavigationItems$(sources, settings) {
     .map(filter(project => !project.deleted))
     .map(map(project => ({
       title: project.title,
-      // TODO : refactor with a makeRoute such that I can make a route from context and params
-      // and I can also take a current url and return the context and params
-      // TODO : very important as this is a coupling between SidePanel and MainPanel
       link: ['projects', project._id].join('/')
     })))
     .distinctUntilChanged()
@@ -125,7 +122,6 @@ const ListOfItemsComponent =
     ])
   ]);
 
-// TODO : refactor TaskSummary somehow into the same level than NavigationSection
 export const SidePanel =
   m({}, {}, [Div('.app__l-side'), [
     Navigation({}, [
