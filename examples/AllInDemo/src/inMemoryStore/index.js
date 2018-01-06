@@ -7,6 +7,7 @@ const $ = Rx.Observable;
 
 export {getStateInStore} from './helpers'
 
+export const TASKS_FILTER = 'task_tab_button_group_state';
 export const TASK_TAB_BUTTON_GROUP_STATE = 'task_tab_button_group_state';
 export const PATCH = 'patch';
 
