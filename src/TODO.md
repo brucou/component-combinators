@@ -50,7 +50,7 @@ runTestScenario?)
 - TODO : get all working with latest version of snabdomm, and cycle-run etc.
 
 # Documentation/Example
-- blog : investigate highlighitn with ``` how to add new syntax, or what is the list```
+- blog : investigate highlighting with ``` how to add new syntax, or what is the list```
 - blog : add ⇡ character for back to top cf. view-source:https://sarabander.github.io/sicp/html/1_002e3.xhtml#pagetop
   - `<section><span class="top jump" title="Jump to top"><a href="#pagetop" accesskey="t">⇡</a></span><a id="pagetop"></a><a id="g_t1_002e3"></a>`
   - code https://sarabander.github.io/sicp/html/js/footnotes.js
@@ -96,35 +96,58 @@ runTestScenario?)
 Well, testing is complicated by having impure functions, so not sure what to do here. Best is to 
 have nice tracing/debugging, and then test with instrumenting the gui (a la flaky selenium). 
 
-# write last summary article + comparison with angular 2/react <component settings>.children.
-
-In summary,
-
-- So what?
-  - readable, i.e. understandable, the logic is immediately apparent from the use of combinators
-    - A projectTaskList is a list of tasks, and a task is ...
-    - compare that with chldren(sources) with lots of $ in settings, and then sinks this merge 
-    sinks that. The combination logic is abstracted into the combinator, that is what it is for.
-  - supports iterative development through refinement
-    - current approach does not, if you call children comp, you then have to merge the sinks, and
-     you don't know yet what are the sinks for your child, if you don't know what you will put 
-     there...
-   - make explicit a syntax tree for a DSL, in which combinators are the keywords, and components
-    are the variables, i.e. in the future the DSL could be extracted and code generated through 
-    parsing
-   - tracing and loggging should be easy and allow for visualization
-     - next release!! 
-
-# doc user as reactive sytems
-- equations:
-  - states_i are behaviours
-  - sum of states_i = states
-  - each behaviour depends on some pieces of state and events
-  - actions depends on some pices of state and events
-  - so there is function i -> indices of events and pieces of state it depends on?
-  - better partition events into individual events, states into behaviours (variables) and 
-  rewrite the equations
-
 # TODO TODO 
+- ROLL UP AND RELEASE
 - start working on logging and visualization -> architecture note
 - start working on the new cycle event/state handling-> architecture draft article to write
+- MAKE A RELEASE!!!!
+  - rmove lodash dependency (forOwn, kebabCase, escape, etc.) that is snabbdom-to-html, which I 
+  don't even use... except for debugging i.e. in dev
+  - so add a DEV variable which will be taken out when building for prod or sth like that
+  
+- OR GO BACK TO MASTER and bundle with webpack - look at size in prod...
+- try some default files from webpack the new one 
+# Introduction of my work to cycle group gitter
+18 months ago, while working on a multi-thousand-line cyclejs code base, I realized how hard it 
+was to actually make sense quickly of a large cycle-js application. There were many problems in that code base (documentation, error management, (no) testing, etc.), as in any, but the ones related to cycle were :
+
+- a large portion of the code was stream manutention due to the use of components. The domain 
+logic, and as a result, the application logic was lost into a sea of streams cryptic operations. 
+- extra confusion due to parametrizing components with streams which were not streams, but constants
+lifted into streams, adding to the noise
+- modifying and extending that code proved to be a gamble, with any debugging sessions counted 
+in hours (to be fair, the complete absence of documentation explained a lot of that)
+- very hard to figure out quickly with certainty the workflow that the application was implementing 
+(you know, multi-step processes where any step may fail and need to backtrack), let alone add new
+ logical branches (error recovery...)
+
+And yet, while that application was large, it cannot really be said to be a particularly complex 
+application. Rather it was the standard CRUD application which is 90% of the applications today. No fancy animations (no animations at all in fact if I remember well), adaptive ui as the only ux trick, otherwise mostly 
+fields and forms and a remote database.
+
+This was the motivation behind my dedicating my (quite) limited free time to investigate remedies
+ to what appeared to be an uncalled for complexity. I singled out those four areas : 
+ componentization, visual debugging, testing, concurrency control. I am happy that finally the 
+ first step is in a sufficient state of progress that it can be shared. 
+ 
+ That first step is a componentization model for cyclejs, that builds upon the original idea of a 
+ component as a function and extends it further. Components are (mostly) what they used to 
+ be. They can now be combined with a seriees of component combinators which eliminate a lot
+  of stream noisy, repetitive code. Those component combinators have been extracted and 
+  abstracted from the multi-thousands line code base, so they should cover a large number of 
+  cases that one encounters in any code base. 
+
+This is really a working draft, akin to a proof of concept. Performance was not at all looked upon, 
+combinators only work with rxjs, the version of cycle used is ancient, build is not 
+optimized, etc. It works nicely though, and a sample application is available to showcase it.
+
+A series of articles covers the theoretical underpinning in more details (altogether they 
+constitute a long read, but I think it is very interesting). A shorter introduction  
+can be found in the `README` for the repository. Every combinator is documented, and is provided 
+with examples.
+
+I will now be using this library in my future projects. I'll now also take a little break on the 
+development of the first step to focus on the second step (visualization -- thanks to this work, it 
+should now be possible to visually and interactively trace and debug an application). In the 
+meanwhile, I would be grateful to have feedback from the community. Any feedback is useful, but in 
+particular the one from people who have spent enough time writing cycle applications. 

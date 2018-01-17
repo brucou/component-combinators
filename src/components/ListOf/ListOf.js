@@ -4,7 +4,7 @@ import {
   assertContract, checkAndGatherErrors, isArray, isFunction, isObject, isString
 } from "../../utils"
 import { m } from '../m/m'
-import { either, isNil, keys, merge, path, reduce, uniq } from 'ramda'
+import { either, isNil, keys, merge, path, reduce, uniq } from '../../vendor/ramda'
 import { isComponent } from "../types"
 import * as Rx from "rx"
 

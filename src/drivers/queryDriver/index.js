@@ -1,6 +1,8 @@
-import { Observable as $ } from "rx"
-import { complement, isNil, tryCatch } from 'ramda';
+import * as Rx from "rx"
+import { complement, isNil, tryCatch } from '../../vendor/ramda';
 import { assertContract, isFunction } from "../../utils"
+
+const $ = Rx.Observable;
 
 // Helper functions
 function errorHandler(e, repository, params) {

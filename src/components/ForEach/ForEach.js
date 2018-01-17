@@ -2,7 +2,7 @@ import {
   assertContract, format, hasAtLeastOneChildComponent, isObservable, isString
 } from "../../utils"
 import { m } from '../m/m'
-import { map, mergeAll } from 'ramda'
+import { map, mergeAll } from '../../vendor/ramda'
 import * as Rx from "rx";
 const $ = Rx.Observable;
 

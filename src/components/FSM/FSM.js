@@ -3,17 +3,17 @@ import {
   always, clone, cond, curry, defaultTo, either, equals, evolve, filter, find, findIndex, flatten,
   identity, isNil, keys, map as mapR, mapObjIndexed, pipe, prop, reduce as reduceR, T, tryCatch,
   uniq, values
-} from "ramda"
+} from "../../../src/vendor/ramda"
 import { assertContract, checkSignature, handleError, isBoolean } from "../../utils"
 import {
   checkEventDefinedInTransitionsMustBeMappedToEventFactory, checkIsObservable,
   checkOriginStatesDefinedInTransitionsMustBeMappedToComponent,
   checkStateEntryComponentFnMustReturnComponent,
-  checkTargetStatesDefinedInTransitionsMustBeMappedToComponent, isEntryComponent, isEntryComponentFactory, isFsmEntryComponents, isFsmEvents, isFsmSettings,
-  isFsmTransitions
+  checkTargetStatesDefinedInTransitionsMustBeMappedToComponent, isEntryComponent,
+  isEntryComponentFactory, isFsmEntryComponents, isFsmEvents, isFsmSettings, isFsmTransitions
 } from "./types"
 import * as Rx from "rx"
-import * as jsonpatch from "fast-json-patch"
+import {apply as jsonPatchApply} from "../../../src/vendor/json-patch"
 import {
   ACTION_REQUEST_NONE, AR_GUARD_NONE, AWAITING_EVENTS, AWAITING_RESPONSE,
   CONTRACT_ACTION_GUARD_CANNOT_FAIL, CONTRACT_ACTION_GUARD_FN_RETURN_VALUE,
@@ -348,7 +348,7 @@ function applyUpdateOperations(/*OUT*/model, modelUpdateOperations) {
   assertContract(isArrayUpdateOperations, [modelUpdateOperations],
     `applyUpdateOperations : ${CONTRACT_MODEL_UPDATE_FN_RETURN_VALUE}`);
 
-  jsonpatch.apply(model, modelUpdateOperations);
+  jsonPatchApply(model, modelUpdateOperations);
   return model;
 }
 

@@ -40,19 +40,19 @@
 
 import {
   assertContract, assertSinksContracts, assertSourcesContracts, emitNullIfEmpty, format,
-  getSinkNamesFromSinksArray, isArray, isArrayOf, isArrayOptSinks, isFunction, isMergeSinkFn,
-  isOptSinks, isUndefined, isVNode, projectSinksOn, removeNullsFromArray, traceSinks, traverseTree, isEmptyArray
+  getSinkNamesFromSinksArray, isArray, isArrayOf, isArrayOptSinks, isEmptyArray, isFunction,
+  isMergeSinkFn, isOptSinks, isVNode, projectSinksOn, removeNullsFromArray, traceSinks, traverseTree
 } from "../../utils"
 import {
-  addIndex, always, clone, concat, defaultTo, flatten, is, isNil, keys, map, merge, mergeWith,
-  reduce, prop, uniq, path
-} from "ramda"
-import { div } from "cycle-snabbdom"
+  addIndex, always, clone, concat, defaultTo, flatten, is, isNil, keys, map, merge, mergeWith, path,
+  reduce
+} from "../../../src/vendor/ramda"
+import { div } from "../../vendor/cycle-snabbdom/index"
 import * as Rx from "rx"
 import { hasMsignature, hasNoTwoSlotsSameName } from "./types"
 
-Rx.config.longStackSupport = true;
-let $ = Rx.Observable
+// Rx.config.longStackSupport = true;
+const $ = Rx.Observable
 const mapIndexed = addIndex(map);
 
 const deepMerge = function deepMerge(a, b) {
@@ -102,7 +102,7 @@ function visitFn(vnode) {
 function getSlotHoles(vNode) {
   if (!vNode) throw `getSlotHoles : internal error, vNode cannot be falsy!`
 
-  const slotHoles =  removeNullsFromArray(
+  const slotHoles = removeNullsFromArray(
     traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, getChildrenFn, visitFn }, vNode)
   );
 
@@ -114,8 +114,8 @@ function getSlotHoles(vNode) {
   assertContract(hasNoTwoSlotsSameName, [slotHoles, slotNames],
     `m > getSlotHoles : at least one slot name has more than one corresponding slot hole! For information : array of slot names should show duplicated - ${slotNames}`);
 
-    // Main case : no given slot name has more than one corresponding slot hole
-    return slotHoles
+  // Main case : no given slot name has more than one corresponding slot hole
+  return slotHoles
 }
 
 /**
@@ -128,7 +128,7 @@ function getSlotHoles(vNode) {
  */
 function rankChildrenBySlot(childrenVNode) {
   return childrenVNode.reduce((acc, vnode) => {
-    if (vnode && vnode.data ) {
+    if (vnode && vnode.data) {
       acc[vnode.data.slot] = acc[vnode.data.slot] || [];
       acc[vnode.data.slot].push(vnode)
     }
@@ -219,13 +219,13 @@ function mergeChildrenIntoParentDOM(parentDOMSink) {
       // slot content, if any can be found
       // Note that if the parent has an undefined slot, children content with no slot will be
       // copied there
-      const slotChildrenHashmap =rankChildrenBySlot(childrenVNode);
+      const slotChildrenHashmap = rankChildrenBySlot(childrenVNode);
 
       if (!isEmptyArray(slotHoles)) {
         slotHoles.forEach(slotHole => {
           const slotName = slotHole.data.slot;
           const childrenSlotContent = slotChildrenHashmap[slotName];
-          if ( childrenSlotContent ){
+          if (childrenSlotContent) {
             slotHole.children = childrenSlotContent
           }
         });
@@ -529,5 +529,6 @@ function m(componentDef, _settings, componentTree) {
 }
 
 export {
-  m, defaultMergeSinkFn, computeDOMSinkDefault, mergeChildrenIntoParentDOM, computeReducedSink, getSlotHoles, rankChildrenBySlot
+  m, defaultMergeSinkFn, computeDOMSinkDefault, mergeChildrenIntoParentDOM, computeReducedSink,
+  getSlotHoles, rankChildrenBySlot
 }

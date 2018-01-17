@@ -3,7 +3,7 @@ import {
   isObservable, isString
 } from "../../utils"
 import { m } from "../m/m"
-import { isNil, keys, map as mapR, mergeAll, omit, path as pathR } from "ramda"
+import { isNil, keys, map as mapR, mergeAll, omit, path as pathR } from "../../vendor/ramda"
 import { routeMatcher } from "../../vendor/routematcher"
 import Rx from "rx"
 import { ROUTE_CONFIG, ROUTE_PARAMS } from "./properties"

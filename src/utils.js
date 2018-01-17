@@ -3,12 +3,12 @@ import {
   addIndex, all, allPass, both, curry, defaultTo, difference, either, equals, flatten, flip,
   intersection, isEmpty, isNil, keys, map, mapObjIndexed, pipe, reduce, reduced, reject, tap, uniq,
   values, where
-} from "ramda"
+} from "./vendor/ramda"
 import * as Rx from "rx"
-import { div, nav } from "cycle-snabbdom"
+import { div, nav } from "./vendor/cycle-snabbdom/index"
 // TODO https://github.com/moll/js-standard-error
 // TODO : define custom error types
-import toHTML from "snabbdom-to-html"
+import toHTML from "./vendor/snabbdom-to-html"
 // import { StandardError } from "standard-error"
 import formatObj from "fmt-obj"
 
@@ -1025,6 +1025,7 @@ function format(obj) {
       // i.e. object is {}
       return '<empty object>'
     }
+    // TODO : only if DEV
     else return formatObj(obj)
   }
   else {

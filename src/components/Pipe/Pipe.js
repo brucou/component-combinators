@@ -1,6 +1,6 @@
 import { assertContract, isArrayOf, isBoolean } from "../../utils"
 import { m } from '../m/m'
-import { intersection, merge, keys } from 'ramda'
+import { intersection, merge, keys } from '../../vendor/ramda'
 import * as Rx from "rx";
 import { isComponent } from "../../components/types"
 

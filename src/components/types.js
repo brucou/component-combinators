@@ -1,4 +1,4 @@
-import { both, complement, cond, either, isEmpty, T, equals } from "ramda"
+import { both, complement, cond, either, isEmpty, T, equals } from "../vendor/ramda"
 import { isFunction, isString, isObject, isStrictRecord } from "../utils"
 import { isArrayOf, isEmptyArray } from "../../src/utils"
 
