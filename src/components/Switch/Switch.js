@@ -6,7 +6,7 @@ import {
   isArrayOf, isFunction, isSource, isString, isVNode, removeEmptyVNodes, removeNullsFromArray,
   unfoldObjOverload
 } from '../../utils'
-import { addIndex, assoc, clone, defaultTo, equals, flatten, map, mergeAll } from '../../vendor/ramda'
+import { addIndex, assoc, clone, defaultTo, equals, flatten, map, mergeAll } from 'ramda'
 import * as Rx from 'rx'
 import { SWITCH_SOURCE } from "./properties"
 import { div } from "../../vendor/cycle-snabbdom/index"

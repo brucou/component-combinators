@@ -1,5 +1,5 @@
 import * as Rx from "rx"
-import { complement, isNil, tryCatch } from '../../vendor/ramda';
+import { complement, isNil, tryCatch } from 'ramda';
 import { assertContract, isFunction } from "../../utils"
 
 const $ = Rx.Observable;

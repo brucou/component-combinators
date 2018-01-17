@@ -46,7 +46,7 @@ import {
 import {
   addIndex, always, clone, concat, defaultTo, flatten, is, isNil, keys, map, merge, mergeWith, path,
   reduce
-} from "../../../src/vendor/ramda"
+} from "ramda"
 import { div } from "../../vendor/cycle-snabbdom/index"
 import * as Rx from "rx"
 import { hasMsignature, hasNoTwoSlotsSameName } from "./types"

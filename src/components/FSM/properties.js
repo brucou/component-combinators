@@ -1,4 +1,4 @@
-import { always } from "../../../src/vendor/ramda";
+import { always } from "ramda";
 
 export const EV_GUARD_NONE = null;
 export const AR_GUARD_NONE = null;

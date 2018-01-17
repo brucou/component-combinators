@@ -1,4 +1,4 @@
-import { mapObjIndexed, tryCatch, values } from '../../vendor/ramda';
+import { mapObjIndexed, tryCatch, values } from 'ramda';
 import * as Rx from "rx"
 
 const $ = Rx.Observable;

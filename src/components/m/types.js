@@ -3,7 +3,7 @@ import {
   isHashMap, isObject,
   isString
 } from "../../utils"
-import { both, complement, either, isNil, pipe, prop, uniq } from '../../vendor/ramda'
+import { both, complement, either, isNil, pipe, prop, uniq } from 'ramda'
 
 function hasValidComponentDefProperty(componentDef, _settings, children) {
   return eitherE(

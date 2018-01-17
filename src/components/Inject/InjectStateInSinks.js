@@ -1,5 +1,5 @@
 import { format , assertContract , isObservable} from "../../utils"
-import { fromPairs, keys, merge, mergeAll, values } from '../../vendor/ramda'
+import { fromPairs, keys, merge, mergeAll, values } from 'ramda'
 
 // TODO : change InjectSources -> InjectStateInSources, and do the shareReplay automatically
 // so go through the code and remove the shareReplay I have added...

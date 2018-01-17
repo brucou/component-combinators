@@ -104,9 +104,16 @@ have nice tracing/debugging, and then test with instrumenting the gui (a la flak
   - rmove lodash dependency (forOwn, kebabCase, escape, etc.) that is snabbdom-to-html, which I 
   don't even use... except for debugging i.e. in dev
   - so add a DEV variable which will be taken out when building for prod or sth like that
-  
+
 - OR GO BACK TO MASTER and bundle with webpack - look at size in prod...
-- try some default files from webpack the new one 
+- try some default files from webpack the new one
+
+- RELEASE a version!!
+  - umd
+- AND THEN I will have to redo the demos but importing the library with package.json and the 
+release number
+- RUN PRETTIER!!
+
 # Introduction of my work to cycle group gitter
 18 months ago, while working on a multi-thousand-line cyclejs code base, I realized how hard it 
 was to actually make sense quickly of a large cycle-js application. There were many problems in that code base (documentation, error management, (no) testing, etc.), as in any, but the ones related to cycle were :

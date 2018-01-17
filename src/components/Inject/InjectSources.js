@@ -1,5 +1,5 @@
 import { m } from "../m/m"
-import { mapObjIndexed } from '../../vendor/ramda'
+import { mapObjIndexed } from 'ramda'
 
 export function InjectSources(sourcesHash, componentTree) {
   return m({

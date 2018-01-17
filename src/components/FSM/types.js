@@ -1,7 +1,7 @@
 import {
   all, allPass, any, both, complement, either, equals, filter, flatten, flip, identity, isEmpty,
   isNil, map, pipe, prop, propEq, T, values
-} from "../../../src/vendor/ramda"
+} from "ramda"
 import {
   isArrayOf, isBoolean, isComponent, isEmptyArray, isFunction, isHashMap, isObject, isObservable,
   isSources, isStrictRecord, isString

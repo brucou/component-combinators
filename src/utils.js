@@ -3,7 +3,7 @@ import {
   addIndex, all, allPass, both, curry, defaultTo, difference, either, equals, flatten, flip,
   intersection, isEmpty, isNil, keys, map, mapObjIndexed, pipe, reduce, reduced, reject, tap, uniq,
   values, where
-} from "./vendor/ramda"
+} from "ramda"
 import * as Rx from "rx"
 import { div, nav } from "./vendor/cycle-snabbdom/index"
 // TODO https://github.com/moll/js-standard-error

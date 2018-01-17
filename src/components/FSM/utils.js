@@ -1,6 +1,6 @@
 import {
   always, cond, evolve, flatten, identity, isNil, map as mapR, mapObjIndexed, pipe, T, values
-} from "../../../src/vendor/ramda"
+} from "ramda"
 import {
   assertContract, assertFunctionContractDecoratorSpecs, decorateWith, isFunction, logFnTrace
 } from "../../utils"

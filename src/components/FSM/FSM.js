@@ -3,7 +3,7 @@ import {
   always, clone, cond, curry, defaultTo, either, equals, evolve, filter, find, findIndex, flatten,
   identity, isNil, keys, map as mapR, mapObjIndexed, pipe, prop, reduce as reduceR, T, tryCatch,
   uniq, values
-} from "../../../src/vendor/ramda"
+} from "ramda"
 import { assertContract, checkSignature, handleError, isBoolean } from "../../utils"
 import {
   checkEventDefinedInTransitionsMustBeMappedToEventFactory, checkIsObservable,
