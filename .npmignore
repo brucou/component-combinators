@@ -1,1 +1,5 @@
-src
+documentation
+dist-node-test
+node_modules
+report
+lib
