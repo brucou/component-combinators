@@ -9,7 +9,7 @@ import { makeDOMDriver } from "cycle-snabbdom"
 import { run } from "@cycle/core"
 import { loadTestData } from '../fixtures';
 // utils
-import { convertVNodesToHTML, DOM_SINK } from "../../../src/utils"
+import { DOM_SINK } from "../../../src/utils"
 import { makeAuthDriver } from "../drivers/auth"
 
 const $ = Rx.Observable;

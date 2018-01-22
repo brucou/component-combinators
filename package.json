@@ -4,7 +4,7 @@
   "description": "Library providing combinators for reactive components",
   "author": "Olivier Couriol",
   "license": "Apache-2.0",
-  "repository": "https://github.com/brucou/rxcc.git",
+  "repository": "https://github.com/brucou/component-combinators.git",
   "main": "dist-node/index.js",
   "module": "src/index.js",
   "jsnext:main": "src/index.js",
@@ -46,7 +46,6 @@
     "derequire": "^2.0.2",
     "extract-text-webpack-plugin": "^1.0.1",
     "fmt-obj": "^2.0.0",
-    "jquery": "1.12.0",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "mocha": "^3.1.2",
@@ -55,6 +54,8 @@
     "qunitjs": "^1.20.0",
     "rimraf": "^2.4.3",
     "rollup": "^0.54.0",
+    "rollup-analyzer-config": "^1.1.1",
+    "rollup-analyzer-plugin": "^1.1.1",
     "rollup-plugin-babel": "^3.0.3",
     "rollup-plugin-commonjs": "^8.2.6",
     "rollup-plugin-node-resolve": "^3.0.2",
@@ -78,10 +79,11 @@
     "fast-json-patch": "^1.1.3",
     "mermaid": "^6.0.0",
     "ramda": "^0.25.0",
+    "route-matcher": "^0.1.0",
     "rx": "^4.1.0",
+    "rx-lite": "^4.0.8",
     "snabbdom": "^0.5.0",
     "snabbdom-to-html": "^3.0.0-beta.1",
-    "standard-error": "^1.1.0",
-    "route-matcher": "^0.1.0"
+    "standard-error": "^1.1.0"
   }
 }

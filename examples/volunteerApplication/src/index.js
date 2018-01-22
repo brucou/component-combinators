@@ -13,7 +13,7 @@ import { defaultUser, loadTestData } from '../fixtures';
 // domain
 import { domainActionsConfig, domainObjectsQueryMap } from './domain/index';
 // utils
-import { convertVNodesToHTML, DOM_SINK } from "../../../src/utils"
+import { DOM_SINK } from "../../../src/utils"
 
 const history = supportsHistory() ? createHistory() : createHashHistory();
 const repository = localForage;
@@ -24,7 +24,7 @@ const modules = defaultModules;
 function filterNull(driver) {
   return function filteredDOMDriver(sink$) {
     return driver(sink$
-      .tap(x => console.log(`merged DOM (driver input): ${convertVNodesToHTML(x)}`, x))
+    //      .tap(x => console.log(`merged DOM (driver input): ${convertVNodesToHTML(x)}`, x))
       .filter(x => x))
   }
 }

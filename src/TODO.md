@@ -44,6 +44,10 @@ cf. https://css-tricks.com/react-router-4/ and investigate if our router can do 
 - Preventing transition
 
 # Build/devop
+- have one file to export per combinator!
+- split utils in three
+  - , one for test (include formatObj and convertVNodesToHtml)
+  - one for DummyCopmonnt, EmptyComponent, traceFn
 - TODO : move to rollup? why lib/rxcc.min.js is so big ? because rx?
 - TODO : also review the structure of the repository (m_helpers? history_driver? where to put 
 runTestScenario?)
@@ -124,37 +128,51 @@ logic, and as a result, the application logic was lost into a sea of streams cry
 lifted into streams, adding to the noise
 - modifying and extending that code proved to be a gamble, with any debugging sessions counted 
 in hours (to be fair, the complete absence of documentation explained a lot of that)
-- very hard to figure out quickly with certainty the workflow that the application was implementing 
-(you know, multi-step processes where any step may fail and need to backtrack), let alone add new
+- very hard to figure out quickly **with certainty** the workflow that the application was 
+implementing (you know, multi-step processes where any step may fail and need to backtrack), let alone add new
  logical branches (error recovery...)
 
 And yet, while that application was large, it cannot really be said to be a particularly complex 
 application. Rather it was the standard CRUD application which is 90% of the applications today. No fancy animations (no animations at all in fact if I remember well), adaptive ui as the only ux trick, otherwise mostly 
-fields and forms and a remote database.
+fields and forms, a remote database, and miscellaneous workflows.
 
 This was the motivation behind my dedicating my (quite) limited free time to investigate remedies
- to what appeared to be an uncalled for complexity. I singled out those four areas : 
- componentization, visual debugging, testing, concurrency control. I am happy that finally the 
+ to what appeared to be an uncalled-for complexity. I singled out those four areas : 
+ componentization, testing, visual debugging, concurrency control. I am happy that finally the 
  first step is in a sufficient state of progress that it can be shared. 
  
  That first step is a componentization model for cyclejs, that builds upon the original idea of a 
  component as a function and extends it further. Components are (mostly) what they used to 
- be. They can now be combined with a seriees of component combinators which eliminate a lot
+ be. They can however now be combined with a series of component combinators which eliminate a lot
   of stream noisy, repetitive code. Those component combinators have been extracted and 
   abstracted from the multi-thousands line code base, so they should cover a large number of 
   cases that one encounters in any code base. 
 
 This is really a working draft, akin to a proof of concept. Performance was not at all looked upon, 
 combinators only work with rxjs, the version of cycle used is ancient, build is not 
-optimized, etc. It works nicely though, and a sample application is available to showcase it.
+optimized, etc. It works nicely though, each combinator features a dedicated non-trivial example of 
+use, and a sample application is available to showcase how combinators work together with 
+components to build a non-trivial application.
 
 A series of articles covers the theoretical underpinning in more details (altogether they 
-constitute a long read, but I think it is very interesting). A shorter introduction  
-can be found in the `README` for the repository. Every combinator is documented, and is provided 
-with examples.
+constitute a long read, but I think it is very interesting). A specific article shows the step-by-step building of the show-cased sample application. A shorter introduction can be found in the `README` for the repository. Every combinator is documented, and tested.
+
+Note that all material will be easier to grasp for people with already some knowledge of 
+streams/rxjs/cyclejs components. I do not spend too much time explaining what `sourcee` is, and 
+how rxjs streams can be combined (though I don't think any example has anything else than `map` 
+and `filter`). So I guess knowledge on these areas can be seen as a useful pre-requisite.
 
 I will now be using this library in my future projects. I'll now also take a little break on the 
-development of the first step to focus on the second step (visualization -- thanks to this work, it 
-should now be possible to visually and interactively trace and debug an application). In the 
+development of the first step to focus on the second and third step (visualization -- thanks to 
+this work, it should now be possible to visually and interactively trace and debug an application). In the 
 meanwhile, I would be grateful to have feedback from the community. Any feedback is useful, but in 
-particular the one from people who have spent enough time writing cycle applications. 
+particular the one from people who have spent enough time writing cycle applications.
+
+# Sample app
+- tic-tac-toe : showcases what?
+  - https://ejdraper.com/2018/01/17/tic-tac-toe-with-vuejs/
+
+# Quotes
+- https://www.oreilly.com/ideas/reactive-programming-vs-reactive-systems
+> We are no longer building programs—end-to-end logic to calculate something for a single operator—as much as we are building systems.
+> In order to deliver systems that users—and businesses—can depend on, they have to be responsive, for it does not matter if something provides the correct response if the response is not available when it is needed. In order to achieve this, we need to make sure that responsiveness can be maintained under failure (resilience) and under load (elasticity). To make that happen, we make these systems message-driven, and we call them reactive systems.

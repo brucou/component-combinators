@@ -22,7 +22,9 @@ export default {
       browser: true,
       modulesOnly: true,
     }),
-    commonjs(),
+    commonjs({
+      include: 'node_modules/**',
+    }),
     babel({
       exclude: 'node_modules/**',
     }),

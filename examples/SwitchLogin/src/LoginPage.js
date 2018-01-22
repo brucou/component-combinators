@@ -1,7 +1,7 @@
 import * as Rx from "rx";
 import { div, form, h2, i, img, input } from 'cycle-snabbdom'
-import { assertContract, convertVNodesToHTML, DOM_SINK } from "../../../src/utils"
-import { T, pipe, always } from "ramda"
+import { assertContract, DOM_SINK } from "../../../src/utils"
+import { always, T } from "ramda"
 import { LOG_IN } from "../drivers/auth"
 
 const $ = Rx.Observable;
@@ -19,25 +19,27 @@ export function LoginPage(loginSettings) {
         return sources.document.querySelector('.email').value && sources.document.querySelector('.password').value
       })
       .map(x => ({
-      context: '',
-      command: LOG_IN,
-      payload: { username: sources.document.querySelector('.email').value }
-    }));
+        context: '',
+        command: LOG_IN,
+        payload: { username: sources.document.querySelector('.email').value }
+      }));
     const redirectAction$ = sources.auth$
       // filter out when user is not authenticated
-      .filter(Boolean)
-      // when user is authenticated, redirect
-      .map(always(loginSettings.redirect))
+        .filter(Boolean)
+        // when user is authenticated, redirect
+        .map(always(loginSettings.redirect))
     ;
 
     return {
-      [DOM_SINK]: $.of(render()).tap(pipe(convertVNodesToHTML, console.warn.bind(console, 'LOGIN:'))),
+      [DOM_SINK]: $.of(render())
+//        .tap(pipe(convertVNodesToHTML, console.warn.bind(console, 'LOGIN:')))
+      ,
       auth$: loginAction$,
       // NOTE : router never gets to emit a value :
       // - when auth sink leads to auth source change, the Switch component disconnect the
       // LoginPage component, including the router sinks -> the route is never taken...
       // I leave it there though as testimony of things to think about
-      router : redirectAction$
+      router: redirectAction$
     }
   }
 }
@@ -71,7 +73,7 @@ function render() {
           div(".field", [
             div(".ui.left.icon.input", [
               i(".lock.icon"),
-              input(".password",{
+              input(".password", {
                 "attributes": {
                   "type": "password",
                   "name": "password",
