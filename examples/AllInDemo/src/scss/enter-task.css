@@ -1,0 +1,20 @@
+.enter-task {
+  display: block;
+  flex: auto; }
+  .enter-task__l-container {
+    display: flex;
+    align-items: center; }
+  .enter-task__l-box-a {
+    flex-grow: 1;
+    margin-right: 20px; }
+  .enter-task__l-box-b {
+    flex-grow: 0; }
+  .enter-task__title-input {
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 3px solid rgba(0, 0, 0, 0.12);
+    background-color: transparent;
+    color: rgba(64, 64, 64, 0.56); }
+
+/*# sourceMappingURL=enter-task.css.map */

@@ -1,0 +1,8 @@
+.efforts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap; }
+  .efforts__label {
+    margin-right: 10px; }
+
+/*# sourceMappingURL=efforts.css.map */

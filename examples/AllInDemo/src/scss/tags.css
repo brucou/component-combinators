@@ -1,0 +1,15 @@
+.tags__tag {
+  display: inline-block;
+  background-color: #3699cb;
+  color: #fff;
+  text-decoration: none;
+  padding: 2px 4px;
+  margin: 0 2px;
+  font-size: 14px;
+  vertical-align: baseline;
+  transition: all .3s ease; }
+  .tags__tag:hover {
+    background-color: transparent;
+    color: #3699cb; }
+
+/*# sourceMappingURL=tags.css.map */

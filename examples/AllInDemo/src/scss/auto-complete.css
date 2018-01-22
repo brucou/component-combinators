@@ -1,0 +1,58 @@
+@charset "UTF-8";
+.auto-complete {
+  display: block;
+  position: relative; }
+  .auto-complete__callout {
+    margin: 0;
+    list-style: none;
+    display: block;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    min-width: 200px;
+    z-index: 1;
+    padding: 20px;
+    background-color: #3699cb;
+    transform: translate(-50%); }
+    .auto-complete__callout:before {
+      content: "";
+      display: block;
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%);
+      bottom: -20px;
+      width: 0;
+      height: 0;
+      border: 10px solid transparent;
+      border-top: 10px solid #3699cb; }
+  .auto-complete__item {
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+    font-weight: 400;
+    white-space: nowrap; }
+    .auto-complete__item:hover {
+      color: white; }
+    .auto-complete__item--selected {
+      color: white; }
+      .auto-complete__item--selected:after {
+        content: "✓";
+        font-family: entypo, sans-serif;
+        display: inline-block;
+        margin-left: 5px;
+        font-size: 1em;
+        line-height: 1; }
+    .auto-complete__item--create {
+      padding-top: 20px;
+      margin-top: 20px;
+      border-top: 1px solid currentColor; }
+      .auto-complete__item--create:before {
+        content: "➕";
+        font-family: entypo, sans-serif;
+        display: inline-block;
+        margin-right: 5px;
+        font-size: 20px;
+        line-height: 1; }
+
+/*# sourceMappingURL=auto-complete.css.map */

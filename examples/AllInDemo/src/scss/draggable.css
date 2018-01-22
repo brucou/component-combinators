@@ -1,0 +1,17 @@
+@keyframes drop-glow {
+  0% {
+    outline: 2px solid rgba(0, 0, 0, 0.2); }
+  100% {
+    outline: 2px solid rgba(0, 0, 0, 0.4); } }
+.draggable {
+  cursor: move;
+  transition: all 0.3s; }
+  .draggable--dragging {
+    opacity: 0.2;
+    filter: grayscale(100%); }
+  .draggable--over {
+    outline: 2px solid #bbbbbb;
+    animation: drop-glow 0.5s infinite;
+    animation-direction: alternate; }
+
+/*# sourceMappingURL=draggable.css.map */

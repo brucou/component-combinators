@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAAA,gBAAiB;EACf,OAAO,EAAE,SAAS",
+"sources": ["navigation-item.scss"],
+"names": [],
+"file": "navigation-item.css"
+}

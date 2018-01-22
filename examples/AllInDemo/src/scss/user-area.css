@@ -1,0 +1,33 @@
+.user-area {
+  display: flex;
+  align-items: center;
+  background-color: #3699cb;
+  padding: 50px 30px;
+  color: white; }
+  .user-area__l-profile {
+    display: block;
+    width: 70px;
+    height: 70px;
+    flex-shrink: 0; }
+  .user-area__l-information {
+    margin-left: 30px; }
+  .user-area__welcome-text {
+    font-size: 20px;
+    font-weight: 500; }
+  .user-area__button {
+    display: inline-block;
+    border: none;
+    padding: 4px 3px 3px;
+    background-color: white;
+    transition: all .3s ease;
+    color: #3699cb;
+    font-size: 11px;
+    line-height: 100%;
+    font-weight: 900;
+    text-decoration: none;
+    text-transform: uppercase; }
+    .user-area__button:hover {
+      background-color: transparent;
+      color: white; }
+
+/*# sourceMappingURL=user-area.css.map */

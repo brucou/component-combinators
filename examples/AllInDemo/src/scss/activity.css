@@ -1,0 +1,56 @@
+.activity {
+  display: block;
+  position: relative; }
+  .activity:before {
+    content: "";
+    display: block;
+    position: absolute;
+    width: 10px;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    background-color: #D9D9D9;
+    transform: translate(-50%); }
+  .activity__info {
+    position: relative;
+    width: 50%;
+    text-align: right;
+    padding: 40px 80px 40px 0; }
+    .activity__info--align-right {
+      left: 50%;
+      text-align: left;
+      padding: 40px 0 40px 80px; }
+  .activity__title {
+    margin-bottom: 0; }
+  .activity__author {
+    font-size: 14px;
+    color: #bbbbbb;
+    margin-top: 0; }
+  .activity__user-image {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 10px solid #D9D9D9;
+    background-color: #f5f5f5;
+    transform: translate(-50%, -50%); }
+  .activity--start-mark:after, .activity--end-mark:after {
+    content: "";
+    display: block;
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    left: 50%;
+    background-color: #D9D9D9;
+    border-radius: 50%; }
+  .activity--start-mark:after {
+    bottom: 0;
+    transform: translate(-50%, 50%); }
+  .activity--end-mark:after {
+    top: 0;
+    transform: translate(-50%, -50%); }
+
+/*# sourceMappingURL=activity.css.map */

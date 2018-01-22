@@ -1,0 +1,64 @@
+*, *:before, *:after {
+  box-sizing: inherit; }
+
+html, body {
+  box-sizing: border-box;
+  font-family: Roboto, Arial, Helvetica Neue, Helvetica, sans-serif;
+  font-weight: 300;
+  line-height: 1.25;
+  color: #404040;
+  background-color: #f5f5f5;
+  height: 100%;
+  padding: 0;
+  margin: 0; }
+
+input, button, a, select {
+  font-family: Roboto, Arial, Helvetica Neue, Helvetica, sans-serif;
+  font-weight: 300;
+  line-height: 1.25;
+  font-size: 16px; }
+  input:focus, button:focus, a:focus, select:focus {
+    outline: none; }
+
+button {
+  cursor: pointer; }
+
+img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto; }
+
+p {
+  margin: 0 0 10px 0; }
+
+::-webkit-input-placeholder {
+  color: rgba(0, 0, 0, 0.3); }
+
+:-moz-placeholder {
+  /* Firefox 18- */
+  color: rgba(0, 0, 0, 0.3); }
+
+::-moz-placeholder {
+  /* Firefox 19+ */
+  color: rgba(0, 0, 0, 0.3); }
+
+:-ms-input-placeholder {
+  color: rgba(0, 0, 0, 0.3); }
+
+.app {
+  display: flex;
+  height: 100%; }
+  .app__l-side {
+    height: 100%;
+    flex-basis: 300px;
+    flex-shrink: 0;
+    background-color: #302f2b; }
+  .app__l-main {
+    flex: auto;
+    height: 100%;
+    overflow: auto; }
+  .app__l-container {
+    max-width: 1000px;
+    margin: 0 auto; }
+
+/*# sourceMappingURL=app.css.map */

@@ -1,0 +1,14 @@
+.project {
+  display: block; }
+  .project__l-header {
+    padding: 50px;
+    background-color: white;
+    overflow: hidden; }
+  .project__title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 36px;
+    line-height: 1.1;
+    font-weight: 400; }
+
+/*# sourceMappingURL=project.css.map */

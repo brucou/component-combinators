@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAEA,WAAY;EACV,OAAO,EAAE,KAAK;EAEd,wBAAe;IACb,UAAU,ECHH,IAAI",
+"sources": ["activities.scss","settings.scss"],
+"names": [],
+"file": "activities.css"
+}

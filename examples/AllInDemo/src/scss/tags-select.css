@@ -1,0 +1,32 @@
+.tags-select {
+  display: block;
+  position: fixed;
+  z-index: 1;
+  padding: 20px;
+  background-color: #3699cb;
+  transform: translate(-50%, calc(-100% - 20px)); }
+  .tags-select:before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%);
+    bottom: -20px;
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+    border-top: 10px solid #3699cb; }
+  .tags-select__list {
+    padding: 0;
+    margin: 0;
+    list-style: none; }
+  .tags-select__item {
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+    font-weight: 400; }
+    .tags-select__item:hover {
+      color: white; }
+
+/*# sourceMappingURL=tags-select.css.map */

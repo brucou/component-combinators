@@ -1,0 +1,11 @@
+.efforts-timeline {
+  display: block;
+  width: 100%; }
+  .efforts-timeline__remaining {
+    fill: #D9D9D9; }
+  .efforts-timeline__done {
+    fill: #68be60; }
+  .efforts-timeline__overtime {
+    fill: #f3cd2c; }
+
+/*# sourceMappingURL=efforts-timeline.css.map */

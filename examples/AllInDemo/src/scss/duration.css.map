@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AACA,UAAW;EACT,OAAO,EAAE,KAAK",
+"sources": ["duration.scss"],
+"names": [],
+"file": "duration.css"
+}

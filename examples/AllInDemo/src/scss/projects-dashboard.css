@@ -1,0 +1,41 @@
+.projects-dashboard {
+  display: block; }
+  .projects-dashboard__l-header {
+    padding: 50px;
+    background-color: white;
+    overflow: hidden;
+    box-shadow: rgba(0, 0, 0, 0.18) 0 1px 2px 0; }
+  .projects-dashboard__l-main {
+    padding: 50px; }
+  .projects-dashboard__title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 36px;
+    line-height: 1.1;
+    font-weight: 400; }
+  .projects-dashboard__sub-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    line-height: 1.1;
+    font-weight: 800; }
+  .projects-dashboard__list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0; }
+    .projects-dashboard__list > li {
+      display: block;
+      width: 320px;
+      flex-grow: 0;
+      margin-right: 20px;
+      margin-bottom: 20px; }
+  .projects-dashboard__tasks {
+    display: block;
+    background-color: white;
+    box-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px 0;
+    padding: 20px;
+    margin-bottom: 50px; }
+
+/*# sourceMappingURL=projects-dashboard.css.map */

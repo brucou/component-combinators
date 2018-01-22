@@ -1,0 +1,31 @@
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  border: none;
+  background-color: #3699cb;
+  color: white;
+  font-weight: 500;
+  text-transform: uppercase;
+  transition: all .3s ease;
+  text-decoration: none; }
+  .button:hover {
+    color: #3699cb;
+    background-color: transparent; }
+  .button--toggle {
+    background-color: #404040;
+    color: rgba(255, 255, 255, 0.37); }
+    .button--toggle:hover {
+      background-color: #4a4a4a;
+      color: rgba(255, 255, 255, 0.75); }
+    .button--toggle.button--active {
+      background-color: #f3cd2c !important;
+      color: white !important; }
+  .button--small {
+    padding: 3px 10px 2px;
+    font-size: 10px;
+    font-weight: 900; }
+  .button:disabled {
+    background-color: #bbbbbb !important;
+    color: white !important; }
+
+/*# sourceMappingURL=button.css.map */

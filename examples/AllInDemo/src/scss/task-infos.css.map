@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AACA,WAAY;EACV,OAAO,EAAE,IAAI;EACb,KAAK,ECQW,OAAO;EDPvB,SAAS,ECCO,IAAI;EDCpB,iBAAQ;IACN,YAAY,ECNN,IAAI",
+"sources": ["task-infos.scss","settings.scss"],
+"names": [],
+"file": "task-infos.css"
+}

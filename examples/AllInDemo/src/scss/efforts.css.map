@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAEA,QAAS;EACP,OAAO,EAAE,IAAI;EACb,WAAW,EAAE,MAAM;EACnB,SAAS,EAAE,IAAI;EAEf,eAAS;IACP,YAAY,ECRN,IAAI",
+"sources": ["efforts.scss","settings.scss"],
+"names": [],
+"file": "efforts.css"
+}

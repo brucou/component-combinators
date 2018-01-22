@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AACA,iBAAkB;EAChB,OAAO,EAAE,KAAK;EACd,KAAK,EAAE,IAAI;EAEX,4BAAa;IACX,IAAI,ECOW,OAAO;EDJxB,uBAAQ;IACN,IAAI,ECOM,OAAO;EDJnB,2BAAY;IACV,IAAI,ECMO,OAAa",
+"sources": ["efforts-timeline.scss","settings.scss"],
+"names": [],
+"file": "efforts-timeline.css"
+}

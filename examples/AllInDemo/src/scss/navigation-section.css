@@ -1,0 +1,33 @@
+.navigation-section {
+  display: block;
+  padding: 35px 30px 30px;
+  border-top: 3px solid rgba(0, 0, 0, 0.1); }
+  .navigation-section__title {
+    margin-top: 0;
+    color: rgba(255, 255, 255, 0.23);
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 900; }
+  .navigation-section__list {
+    margin: 0;
+    padding: 0;
+    list-style: none; }
+  .navigation-section__link {
+    display: block;
+    margin-right: -30px;
+    margin-left: -30px;
+    padding: 16px 30px;
+    transition: all .3s ease;
+    line-height: 1.1;
+    font-weight: 500;
+    text-decoration: none;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5); }
+    .navigation-section__link:hover {
+      color: rgba(255, 255, 255, 0.9); }
+    .navigation-section__link--active {
+      border-left: 3px solid #f3cd2c;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: rgba(255, 255, 255, 0.9); }
+
+/*# sourceMappingURL=navigation-section.css.map */

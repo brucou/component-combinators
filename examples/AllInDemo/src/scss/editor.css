@@ -1,0 +1,107 @@
+@charset "UTF-8";
+.editor {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  min-height: 50px; }
+  .editor__editable-content {
+    display: none;
+    min-height: 1em;
+    word-break: break-word; }
+    .editor__editable-content:empty {
+      width: 100%; }
+    .editor__editable-content:focus {
+      outline: none; }
+  .editor__output {
+    word-break: break-word; }
+  .editor__controls {
+    display: flex;
+    margin-left: 10px; }
+  .editor__icon-edit {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+    transition: transform .2s ease, opacity .2s ease;
+    transform-origin: 50% 50%;
+    transform: scale(0.5);
+    color: #3699cb; }
+    .editor__icon-edit:before {
+      content: "✎";
+      font-family: entypo, sans-serif;
+      text-decoration-skip: all;
+      display: block;
+      width: 30px;
+      height: 30px;
+      font-size: 30px;
+      line-height: 1; }
+  .editor__icon-save {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+    transition: transform .2s ease, opacity .2s ease;
+    transform-origin: 50% 50%;
+    transform: scale(0.5);
+    color: #68be60; }
+    .editor__icon-save:before {
+      content: "✓";
+      font-family: entypo, sans-serif;
+      text-decoration-skip: all;
+      display: block;
+      width: 30px;
+      height: 30px;
+      font-size: 30px;
+      line-height: 1; }
+  .editor__icon-cancel {
+    display: block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+    transition: transform .2s ease, opacity .2s ease;
+    transform-origin: 50% 50%;
+    transform: scale(0.5);
+    color: #ff5967; }
+    .editor__icon-cancel:before {
+      content: "🚫";
+      font-family: entypo, sans-serif;
+      text-decoration-skip: all;
+      display: block;
+      width: 30px;
+      height: 30px;
+      font-size: 30px;
+      line-height: 1; }
+  .editor:hover .editor__icon-edit {
+    opacity: 1;
+    transform: scale(1); }
+  .editor--edit-mode .editor__editable-content {
+    display: block; }
+  .editor--edit-mode .editor__output {
+    display: none; }
+  .editor--edit-mode .editor__icon-save {
+    opacity: 1;
+    transform: scale(1); }
+  .editor--edit-mode .editor__icon-cancel {
+    opacity: 1;
+    transform: scale(1); }
+
+/*# sourceMappingURL=editor.css.map */

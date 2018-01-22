@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAEE,uBAAQ;EACN,MAAM,ECYG,OAAO;EDXhB,YAAY,EAAE,IAAI;EAClB,eAAe,EAAE,UAAU",
+"sources": ["activity-chart.scss","settings.scss"],
+"names": [],
+"file": "activity-chart.css"
+}

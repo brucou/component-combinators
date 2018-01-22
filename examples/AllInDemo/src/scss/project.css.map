@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAEA,QAAS;EACP,OAAO,EAAE,KAAK;EAEd,kBAAY;IACV,OAAO,ECHA,IAAI;IDIX,gBAAgB,EAAE,KAAK;IACvB,QAAQ,EAAE,MAAM;EAGlB,eAAS;IACP,UAAU,EAAE,CAAC;IACb,aAAa,ECZP,IAAI;IDaV,SAAS,EAAE,IAAI;IACf,WAAW,EAAE,GAAG;IAChB,WAAW,EAAE,GAAG",
+"sources": ["project.scss","settings.scss"],
+"names": [],
+"file": "project.css"
+}

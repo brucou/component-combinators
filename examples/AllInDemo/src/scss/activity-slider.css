@@ -1,0 +1,17 @@
+.activity-slider {
+  display: block; }
+  .activity-slider__slide {
+    fill: #F9F9F9; }
+  .activity-slider__activity {
+    fill: #3699cb; }
+  .activity-slider__time {
+    fill: #bbbbbb;
+    font-size: 14px; }
+  .activity-slider__tick {
+    stroke: #bbbbbb;
+    stroke-width: 2px;
+    stroke-dasharray: 3px; }
+  .activity-slider__selection-overlay {
+    fill: #D9D9D9; }
+
+/*# sourceMappingURL=activity-slider.css.map */

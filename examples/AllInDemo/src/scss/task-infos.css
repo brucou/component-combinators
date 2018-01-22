@@ -1,0 +1,8 @@
+.task-infos {
+  display: flex;
+  color: #888888;
+  font-size: 14px; }
+  .task-infos__info {
+    margin-right: 20px; }
+
+/*# sourceMappingURL=task-infos.css.map */
