@@ -1,4 +1,3 @@
-import * as Rx from "rx";
 import { ForEach } from "../../../src/components/ForEach/ForEach"
 import { ListOf } from "../../../src/components/ListOf/ListOf"
 import { InjectSources } from "../../../src/components/Inject/InjectSources"
@@ -8,8 +7,6 @@ import { Card } from "./Card"
 import { CARDS, PAGE } from "./domain/index"
 import { Pagination } from "./Pagination"
 import { path } from 'ramda'
-
-const $ = Rx.Observable;
 
 function fetchCardsInfo(sources, settings) {
   return fetchPageNumber(sources, settings)
