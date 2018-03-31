@@ -4806,7 +4806,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
     });
 });
 
-QUnit.test("main case - InjectCircularSources - processFn throws", function exec_test(assert) {
+QUnit.test("edge case - InjectCircularSources - processFn throws", function exec_test(assert) {
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
@@ -6501,7 +6501,7 @@ QUnit.test("main case - InjectCircularSources - processFn throws", function exec
     });
 });
 
-QUnit.test("main case - InjectCircularSources - processFn returns stream which throws", function exec_test(assert) {
+QUnit.test("edge case - InjectCircularSources - processFn returns stream which throws", function exec_test(assert) {
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
