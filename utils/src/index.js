@@ -506,101 +506,121 @@ function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn
 // T must have getChildrenFn :: Tree -> [] | [Tree], i.e. it is a prism!!
 // Tree T :: Leaf T | [Tree T]
 // visitFn should be a reducer :: acc -> Tree -> acc'
+/**
+ *
+ * @param {Map} traversalState
+ * @param subTree
+ * @param {Array} subTreeChildren
+ * @modifies {traversalState}
+ */
+function updatePathInTraversalState(traversalState, subTree, subTreeChildren){
+  subTreeChildren.forEach((subTreeChild, index) => {
+    const traversalStateParent = traversalState.get(subTree);
+    traversalState.set(subTreeChild, {isAdded : true, isVisited: false, path : traversalStateParent.path.concat(index)})
+  });
+}
+function updateVisitInTraversalState(traversalState, tree){
+  const localTraversalState = traversalState.get(tree);
+  const {isVisited, isAdded, path} = localTraversalState;
+  traversalState.set(tree, {isVisited : true, isAdded, path})
+}
+
 function visitTree(traversalSpecs, tree) {
-  const { store, lenses, visit } = traversalSpecs;
+  const { store, lenses, traverse } = traversalSpecs;
   const { empty, add, takeAndRemoveOne, isEmpty } = store;
-  const { getChildren, getParent, getRoot, isRoot, isLeaf, hasChildren, getLabel } = lenses;
-  const { reduce, seed } = visit;
+  const { getChildren, getLabel, setChildren, setLabel, isRoot, isLeaf, hasChildren} = lenses;
+  const { visit, seed } = traverse;
+  const traversalState = new Map();
 
   let currentStore = empty;
   let visitAcc = seed;
   add([tree], currentStore);
+  traversalState.set(tree, {isAdded : true, isVisited : false, path : [0]});
 
   while ( !isEmpty(currentStore) ) {
     const subTree = takeAndRemoveOne(currentStore);
-    add(getChildren(subTree), currentStore);
-    visitAcc = reduce(visitAcc, subTree);
+    const subTreeChildren = getChildren(traversalState, subTree);
+
+    add(subTreeChildren, currentStore);
+    updatePathInTraversalState(traversalState, subTree, subTreeChildren);
+    visitAcc = visit(visitAcc, traversalState, subTree);
+    updateVisitInTraversalState(traversalState, subTree);
   }
 
   return visitAcc
 }
 
-function bfsTraverseTree(lenses, tree){
+function bfsTraverseTree(lenses, traverse, tree) {
   const traversalSpecs = {
-    store : {
-      empty : [],
-      takeAndRemoveOne : store => store.shift(),
-      isEmpty : store => Boolean(store.length === 0),
-      add : (subTrees, store) => store.push(...subTrees)
+    store: {
+      empty: [],
+      takeAndRemoveOne: store => store.shift(),
+      isEmpty: store => Boolean(store.length === 0),
+      add: (subTrees, store) => store.push(...subTrees)
     },
-    lenses,
-    visit : {
-      seed : [],
-      reduce : (accResult, tree) => {
-        accResult.push(lenses.getLabel(tree))
-        return accResult
-      }
-    }
+    lenses : {
+      ...lenses,
+      getChildren : (traversalState, subTree) => lenses.getChildren(subTree)
+    },
+    traverse
   };
 
   return visitTree(traversalSpecs, tree)
 }
 
-function dfsTraverseTree(lenses, tree){
+function dfsTraverseTree(lenses, traverse, tree) {
   const traversalSpecs = {
-    store : {
-      empty : [],
-      takeAndRemoveOne : store => store.shift(),
-      isEmpty : store => Boolean(store.length === 0),
+    store: {
+      empty: [],
+      takeAndRemoveOne: store => store.shift(),
+      isEmpty: store => Boolean(store.length === 0),
       // NOTE : vs. bfs, only `add` changes
-      add : (subTrees, store) => store.unshift(...subTrees)
+      add: (subTrees, store) => store.unshift(...subTrees)
     },
-    visit : {
-      seed : [],
-      reduce : (accResult, tree) => {
-        accResult.push(lenses.getLabel(tree))
-        return accResult
-      }
-    }
+    lenses : {
+      ...lenses,
+      getChildren : (traversalState, subTree) => lenses.getChildren(subTree)
+    },
+    traverse
   };
 
   return visitTree(traversalSpecs, tree)
 }
 
-function postOrderTraverseTree(tree){
-  const isVisitedMap = new Map();
-  const lenses = {
-    // For post-order, add the parent at the end of the children
-    getChildren : tree => {
-      return isVisitedMap.get(tree) ? [] : tree.children ? tree.children.concat(tree) : []
-    },
-    getLabel : tree => tree.label,
-    isLeaf : tree => Boolean(!tree.children || tree.children.length === 0)
+function postOrderTraverseTree(lenses, traverse, tree) {
+  const { getChildren } = lenses;
+  const isLeaf = tree => getChildren(tree).length === 0;
+  const {seed, visit} = traverse;
+  const decoratedLenses = {
+    // For post-order, add the parent at the end of the children, that simulates the stack for the recursive function
+    // call in the recursive post-order traversal algorithm
+    getChildren: (traversalState, tree) =>
+      (traversalState.get(tree).isVisited || isLeaf(tree))
+        ? []
+        : getChildren(tree).concat(tree),
   };
   const traversalSpecs = {
-    store : {
-      empty : [],
-      takeAndRemoveOne : store => store.shift(),
-      isEmpty : store => Boolean(store.length === 0),
-      // NOTE : vs. bfs, only `add` changes
-      add : (subTrees, store) => store.unshift(...subTrees)
+    store: {
+      empty: [],
+      takeAndRemoveOne: store => store.shift(),
+      isEmpty: store => store.length === 0,
+      add: (subTrees, store) => store.unshift(...subTrees)
     },
-    lenses : lenses,
-    visit : {
-      seed : [],
-      reduce : (result, tree) => {
+    lenses: decoratedLenses,
+    traverse: {
+      seed: seed,
+      visit: (result, traversalState, tree) => {
+        const localTraversalState = traversalState.get(tree);
         // Cases :
-        // 1. label has been visited already
-        // 2. label has not been visited, and there are children
-        // 3. label has not been visited, and there are no children
-        if (isVisitedMap.get(tree)) {
-          console.log(`bfs : ${tree.label}`)
-          result.push(lenses.getLabel(tree))
+        // 1. label has been visited already : visit
+        // 2. label has not been visited, and there are no children : visit
+        // 3. label has not been visited, and there are children : don't visit, will do it later
+        if (localTraversalState.isVisited) {
+          visit(result, traversalState, tree);
         }
         else {
-          isVisitedMap.set(tree, true);
-          if (lenses.isLeaf(tree)){
-            result.push(lenses.getLabel(tree))
+          if (isLeaf(tree)) {
+            visit(result, traversalState, tree);
           }
           else {
             //
@@ -619,11 +639,10 @@ function postOrderTraverseTree(tree){
 const tree = {label : 'root', children : [{label : 'left'}, {label: 'middle', children : [{label : 'midleft'}, {label:'midright'}]}, {label: 'right'}]}
 const lenses = {
   getChildren : tree => tree.children || [],
-  getLabel : tree => tree.label
 };
+const traverse = {seed:[], visit : (result, traversalState, tree) => {result.push(tree.label); return result;}}
+postOrderTraverseTree(lenses, traverse, tree)
 */
-
-
 
 function firebaseListToArray(fbList) {
   // will have {key1:element, key2...}
