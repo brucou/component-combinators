@@ -32,7 +32,7 @@ Combine (object) or InjectSettings(function, use to adapt settings). Worse case,
     - m({), [TreeRoot, [m({}, [N0]), m({}, [TreeNode, [m({}, [N1]), m({}, [N2])]]), m({}, [N3])]])
       - passing everytime the correct settings
   - So I can get the final component by reducing the tree while traversing it
-    - this is a reverse breadth-first traversal
+    - this is a Postorder tree traversal : NO!
     - if tree is empty return TreeEmpty (think about which settings)
     - otherwise `componentArray` starts with []
     - for each traversed node :
@@ -261,3 +261,52 @@ have nice tracing/debugging, and then test with instrumenting the gui (a la flak
 - https://www.oreilly.com/ideas/reactive-programming-vs-reactive-systems
 > We are no longer building programs—end-to-end logic to calculate something for a single operator—as much as we are building systems.
 > In order to deliver systems that users—and businesses—can depend on, they have to be responsive, for it does not matter if something provides the correct response if the response is not available when it is needed. In order to achieve this, we need to make sure that responsiveness can be maintained under failure (resilience) and under load (elasticity). To make that happen, we make these systems message-driven, and we call them reactive systems.
+
+
+function postOrderTraverseTree(tree){
+  const isVisitedMap = new Map();
+  const lenses = {
+    // For post-order, add the parent at the end of the children
+    getChildren : tree => {
+      return isVisitedMap.get(tree) ? [] : tree.children ? tree.children.concat(tree) : []
+    },
+    getLabel : tree => tree.label,
+    isLeaf : tree => Boolean(!tree.children || tree.children.length === 0)
+  };
+  const traversalSpecs = {
+    store : {
+      empty : [],
+      takeAndRemoveOne : store => store.shift(),
+      isEmpty : store => Boolean(store.length === 0),
+      // NOTE : vs. bfs, only `add` changes
+      add : (subTrees, store) => store.unshift(...subTrees)
+    },
+    lenses : lenses,
+    visit : {
+      seed : [],
+      reduce : (result, tree) => {
+        // Cases :
+        // 1. label has been visited already
+        // 2. label has not been visited, and there are children
+        // 3. label has not been visited, and there are no children
+        if (isVisitedMap.get(tree)) {
+          console.log(`bfs : ${tree.label}`)
+          result.push(lenses.getLabel(tree))
+        }
+        else {
+          isVisitedMap.set(tree, true);
+          if (lenses.isLeaf(tree)){
+            result.push(lenses.getLabel(tree))
+          }
+          else {
+            //
+          }
+        }
+
+        return result
+      }
+    }
+  };
+
+  return visitTree(traversalSpecs, tree)
+}

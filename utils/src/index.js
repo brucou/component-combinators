@@ -1,6 +1,6 @@
 import {
-  curry, defaultTo, isNil, keys, mapObjIndexed, pipe, reject, values, tap, uniq, flatten, map, reduce, equals, assoc, T,
-  cond
+  assoc, cond, curry, defaultTo, equals, flatten, isNil, keys, map, mapObjIndexed, pipe, reduce, reject, T, tap, uniq,
+  values
 } from "ramda"
 import Rx from "rx"
 import { div, nav } from "cycle-snabbdom"
@@ -55,6 +55,7 @@ const DOM_SINK = 'DOM';
  * @property {function(Sinks):Boolean} sinksContract
  * @property {function(Sources):Boolean} sourcesContract
  */
+
 /**
  * @typedef {Object} ShortComponentDef
  * @property {?function(Sources, Settings)} makeLocalSources
@@ -379,8 +380,8 @@ function makeFunctionDecorator({ before, after, name }) {
   // trick to get the same name for the returned function
   // cf.
   // http://stackoverflow.com/questions/9479046/is-there-any-non-eval-way-to-create-a-function-with-a-runtime-determined-name
-  // BUG : does not seem to work in chrome actually. HAve to use Function constructor, hence eval...
-  // NOTE : NamedFunction hence works
+  // BUG : does not seem to work in chrome actually. HAve to use Function constructor, hence eval... NOTE :
+  // NamedFunction hence works
   const obj = {
     [decoratorFnName](args, fnToDecorateName, fnToDecorate) {
       before && before(args, fnToDecorateName, fnToDecorate);
@@ -496,6 +497,134 @@ function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn
   return traversalResult
 }
 
+// TODO : traverseTree, adding concat monoidal function, and monoidal empty
+// then store: { empty, add, take, isEmpty}
+// then take :: store -> Maybe Tree (maybe, because the store could be empty...)
+//      add :: [Tree] -> store -> store, automatically derived from below
+//      add :: Tree -> store -> store // NO: use the array form
+//      add :: [] -> store -> store (the store is left unchanged)
+// T must have getChildrenFn :: Tree -> [] | [Tree], i.e. it is a prism!!
+// Tree T :: Leaf T | [Tree T]
+// visitFn should be a reducer :: acc -> Tree -> acc'
+function visitTree(traversalSpecs, tree) {
+  const { store, lenses, visit } = traversalSpecs;
+  const { empty, add, takeAndRemoveOne, isEmpty } = store;
+  const { getChildren, getParent, getRoot, isRoot, isLeaf, hasChildren, getLabel } = lenses;
+  const { reduce, seed } = visit;
+
+  let currentStore = empty;
+  let visitAcc = seed;
+  add([tree], currentStore);
+
+  while ( !isEmpty(currentStore) ) {
+    const subTree = takeAndRemoveOne(currentStore);
+    add(getChildren(subTree), currentStore);
+    visitAcc = reduce(visitAcc, subTree);
+  }
+
+  return visitAcc
+}
+
+function bfsTraverseTree(lenses, tree){
+  const traversalSpecs = {
+    store : {
+      empty : [],
+      takeAndRemoveOne : store => store.shift(),
+      isEmpty : store => Boolean(store.length === 0),
+      add : (subTrees, store) => store.push(...subTrees)
+    },
+    lenses,
+    visit : {
+      seed : [],
+      reduce : (accResult, tree) => {
+        accResult.push(lenses.getLabel(tree))
+        return accResult
+      }
+    }
+  };
+
+  return visitTree(traversalSpecs, tree)
+}
+
+function dfsTraverseTree(lenses, tree){
+  const traversalSpecs = {
+    store : {
+      empty : [],
+      takeAndRemoveOne : store => store.shift(),
+      isEmpty : store => Boolean(store.length === 0),
+      // NOTE : vs. bfs, only `add` changes
+      add : (subTrees, store) => store.unshift(...subTrees)
+    },
+    visit : {
+      seed : [],
+      reduce : (accResult, tree) => {
+        accResult.push(lenses.getLabel(tree))
+        return accResult
+      }
+    }
+  };
+
+  return visitTree(traversalSpecs, tree)
+}
+
+function postOrderTraverseTree(tree){
+  const isVisitedMap = new Map();
+  const lenses = {
+    // For post-order, add the parent at the end of the children
+    getChildren : tree => {
+      return isVisitedMap.get(tree) ? [] : tree.children ? tree.children.concat(tree) : []
+    },
+    getLabel : tree => tree.label,
+    isLeaf : tree => Boolean(!tree.children || tree.children.length === 0)
+  };
+  const traversalSpecs = {
+    store : {
+      empty : [],
+      takeAndRemoveOne : store => store.shift(),
+      isEmpty : store => Boolean(store.length === 0),
+      // NOTE : vs. bfs, only `add` changes
+      add : (subTrees, store) => store.unshift(...subTrees)
+    },
+    lenses : lenses,
+    visit : {
+      seed : [],
+      reduce : (result, tree) => {
+        // Cases :
+        // 1. label has been visited already
+        // 2. label has not been visited, and there are children
+        // 3. label has not been visited, and there are no children
+        if (isVisitedMap.get(tree)) {
+          console.log(`bfs : ${tree.label}`)
+          result.push(lenses.getLabel(tree))
+        }
+        else {
+          isVisitedMap.set(tree, true);
+          if (lenses.isLeaf(tree)){
+            result.push(lenses.getLabel(tree))
+          }
+          else {
+            //
+          }
+        }
+
+        return result
+      }
+    }
+  };
+
+  return visitTree(traversalSpecs, tree)
+}
+
+/* TEST DATA
+const tree = {label : 'root', children : [{label : 'left'}, {label: 'middle', children : [{label : 'midleft'}, {label:'midright'}]}, {label: 'right'}]}
+const lenses = {
+  getChildren : tree => tree.children || [],
+  getLabel : tree => tree.label
+};
+*/
+
+
+
 function firebaseListToArray(fbList) {
   // will have {key1:element, key2...}
   return values(fbList)
@@ -577,7 +706,7 @@ function format(obj) {
       // i.e. object is {}
       return '<empty object>'
     }
-    else return formatObj(obj, {maxDepth : 3})
+    else return formatObj(obj, { maxDepth: 3 })
   }
   else {
     return "" + obj
@@ -612,14 +741,14 @@ function _decorateWithAdvices(advices, fnToAdvise) {
   }, fnToAdvise)
 }
 
-function isAdvised(fn){
+function isAdvised(fn) {
   return Boolean(fn && fn.isAdvised)
 }
 
 function decorateWithAdvice(advice, fnToAdvise) {
   const fnToDecorateName = getFunctionName(fnToAdvise);
 
-  const advisedFn =  NamedFunction(fnToDecorateName, [], `
+  const advisedFn = NamedFunction(fnToDecorateName, [], `
       const args = [].slice.call(arguments);
       const decoratingFn = makeAdvisedFunction(advice);
       const joinpoint = {args, fnToDecorateName};
@@ -637,7 +766,7 @@ function makeAdvisedFunction(advice) {
   // Contract :
   // if `around` is correctly set, then there MUST NOT be a `before` and `after`
   // if `around` is not set, there MUST be EITHER `before` OR `after`
-  if ('around' in advice && typeof(advice.around)==='function') {
+  if ('around' in advice && typeof(advice.around) === 'function') {
     if ('before' in advice || 'after' in advice) {
       throw `makeAdvisedFunction: if 'around' is set, then there MUST NOT be a 'before' or 'after' property`
     }
@@ -655,7 +784,7 @@ function makeAdvisedFunction(advice) {
   else {
     // Main case : BEFORE or/and AFTER advice
     return function advisedFunction(joinpoint, fnToDecorate) {
-      const {args, fnToDecorateName} = joinpoint;
+      const { args, fnToDecorateName } = joinpoint;
       const { before, after, afterThrowing, afterReturning, around } = advice;
 
       before && before(joinpoint, fnToDecorate);
@@ -678,14 +807,14 @@ function makeAdvisedFunction(advice) {
       }
       finally {
         // We execute `after` advice even if advised function throws
-        after && after(merge({returnedValue: result, exception}, joinpoint), fnToDecorate);
+        after && after(merge({ returnedValue: result, exception }, joinpoint), fnToDecorate);
       }
     };
   }
 }
 
-function removeAdvice(advisedFn){
-  if (!isAdvised(advisedFn)){
+function removeAdvice(advisedFn) {
+  if (!isAdvised(advisedFn)) {
     throw `removeAdvice : cannot remove advice on function : it is not advised in the first place!`
   }
   else {
@@ -700,7 +829,7 @@ const CHILDREN_ONLY = 'children_only';
 const componentTreePatternMatchingPredicates = [
   [ONE_COMPONENT_ONLY, componentTree => isNil(componentTree[1])],
   [CONTAINER_AND_CHILDREN, componentTree => Array.isArray(componentTree[1])],
-  [CHILDREN_ONLY, T ]
+  [CHILDREN_ONLY, T]
 ];
 
 /**
@@ -711,6 +840,7 @@ const componentTreePatternMatchingPredicates = [
  * Function which takes any number or no arguments and returns or not a value
  * MUST be a pure function (otherwise we will call it Procedure)
  */
+
 /**
  * @typedef {String} CaseName
  * Identifier for a case expression in a pattern matching section
@@ -721,7 +851,7 @@ const componentTreePatternMatchingPredicates = [
  * @param {Array<[CaseName, Predicate]>} patternMatchingPredicates
  * @param {Object.<CaseName, Expression>} patternMatchingExpressions
  */
-function makePatternMatcher(patternMatchingPredicates, patternMatchingExpressions){
+function makePatternMatcher(patternMatchingPredicates, patternMatchingExpressions) {
   // TODO : check inputs' type contracts
 
   const conditions = patternMatchingPredicates.map(([caseName, predicate]) => {
@@ -739,15 +869,15 @@ function makePatternMatcher(patternMatchingPredicates, patternMatchingExpression
   return cond(conditions)
 }
 
-function isNextNotification(notification){
+function isNextNotification(notification) {
   return notification.kind === 'N'
 }
 
-function isCompletedNotification(notification){
+function isCompletedNotification(notification) {
   return notification.kind === 'C'
 }
 
-function isErrorNotification(notification){
+function isErrorNotification(notification) {
   return notification.kind === 'E'
 }
 
