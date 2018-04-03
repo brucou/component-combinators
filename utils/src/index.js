@@ -7,6 +7,7 @@ import { div, nav } from "cycle-snabbdom"
 import toHTML from "snabbdom-to-html"
 // import { StandardError } from "standard-error"
 import formatObj from 'pretty-format'
+import { PATH_ROOT } from "../../tracing/src/properties"
 
 const $ = Rx.Observable;
 const ERROR_MESSAGE_PREFIX = 'ERROR : '
@@ -506,36 +507,48 @@ function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn
 // T must have getChildrenFn :: Tree -> [] | [Tree], i.e. it is a prism!!
 // Tree T :: Leaf T | [Tree T]
 // visitFn should be a reducer :: acc -> Tree -> acc'
+const PATH_ROOT = [0];
+const POST_ORDER = 'POST_ORDER';
+const PRE_ORDER = 'PRE_ORDER';
+const BFS = 'BFS';
+
 /**
  *
- * @param {Map} traversalState
+ * @param {WeakMap} traversalState
  * @param subTree
  * @param {Array} subTreeChildren
  * @modifies {traversalState}
  */
-function updatePathInTraversalState(traversalState, subTree, subTreeChildren){
+function updatePathInTraversalState(traversalState, subTree, subTreeChildren) {
   subTreeChildren.forEach((subTreeChild, index) => {
     const traversalStateParent = traversalState.get(subTree);
-    traversalState.set(subTreeChild, {isAdded : true, isVisited: false, path : traversalStateParent.path.concat(index)})
+    traversalState.set(subTreeChild, { isAdded: true, isVisited: false, path: traversalStateParent.path.concat(index) })
   });
 }
-function updateVisitInTraversalState(traversalState, tree){
+
+/**
+ *
+ * @param {WeakMap} traversalState
+ * @param tree
+ * @modifies {traversalState}
+ */
+function updateVisitInTraversalState(traversalState, tree) {
   const localTraversalState = traversalState.get(tree);
-  const {isVisited, isAdded, path} = localTraversalState;
-  traversalState.set(tree, {isVisited : true, isAdded, path})
+  const { isVisited, isAdded, path } = localTraversalState;
+  traversalState.set(tree, { isVisited: true, isAdded, path })
 }
 
 function visitTree(traversalSpecs, tree) {
   const { store, lenses, traverse } = traversalSpecs;
   const { empty, add, takeAndRemoveOne, isEmpty } = store;
-  const { getChildren, getLabel, setChildren, setLabel, isRoot, isLeaf, hasChildren} = lenses;
+  const { getChildren, getLabel, setChildren, setLabel, isRoot, isLeaf, hasChildren } = lenses;
   const { visit, seed } = traverse;
-  const traversalState = new Map();
+  const traversalState = new WeakMap();
 
   let currentStore = empty;
   let visitAcc = seed;
   add([tree], currentStore);
-  traversalState.set(tree, {isAdded : true, isVisited : false, path : [0]});
+  traversalState.set(tree, { isAdded: true, isVisited: false, path: PATH_ROOT });
 
   while ( !isEmpty(currentStore) ) {
     const subTree = takeAndRemoveOne(currentStore);
@@ -550,7 +563,7 @@ function visitTree(traversalSpecs, tree) {
   return visitAcc
 }
 
-function bfsTraverseTree(lenses, traverse, tree) {
+function breadthFirstTraverseTree(lenses, traverse, tree) {
   const traversalSpecs = {
     store: {
       empty: [],
@@ -558,9 +571,9 @@ function bfsTraverseTree(lenses, traverse, tree) {
       isEmpty: store => Boolean(store.length === 0),
       add: (subTrees, store) => store.push(...subTrees)
     },
-    lenses : {
+    lenses: {
       ...lenses,
-      getChildren : (traversalState, subTree) => lenses.getChildren(subTree)
+      getChildren: (traversalState, subTree) => lenses.getChildren(subTree)
     },
     traverse
   };
@@ -568,7 +581,7 @@ function bfsTraverseTree(lenses, traverse, tree) {
   return visitTree(traversalSpecs, tree)
 }
 
-function dfsTraverseTree(lenses, traverse, tree) {
+function preorderTraverseTree(lenses, traverse, tree) {
   const traversalSpecs = {
     store: {
       empty: [],
@@ -577,9 +590,9 @@ function dfsTraverseTree(lenses, traverse, tree) {
       // NOTE : vs. bfs, only `add` changes
       add: (subTrees, store) => store.unshift(...subTrees)
     },
-    lenses : {
+    lenses: {
       ...lenses,
-      getChildren : (traversalState, subTree) => lenses.getChildren(subTree)
+      getChildren: (traversalState, subTree) => lenses.getChildren(subTree)
     },
     traverse
   };
@@ -590,7 +603,7 @@ function dfsTraverseTree(lenses, traverse, tree) {
 function postOrderTraverseTree(lenses, traverse, tree) {
   const { getChildren } = lenses;
   const isLeaf = tree => getChildren(tree).length === 0;
-  const {seed, visit} = traverse;
+  const { seed, visit } = traverse;
   const decoratedLenses = {
     // For post-order, add the parent at the end of the children, that simulates the stack for the recursive function
     // call in the recursive post-order traversal algorithm
@@ -635,6 +648,9 @@ function postOrderTraverseTree(lenses, traverse, tree) {
   return visitTree(traversalSpecs, tree)
 }
 
+// DOC:  because this uses Map, every node MUST be a different object. It is easy to be the case for nodes, but less
+// obvious for leaves. Leaves MUST all be different object!!!
+
 /* TEST DATA
 const tree = {label : 'root', children : [{label : 'left'}, {label: 'middle', children : [{label : 'midleft'}, {label:'midright'}]}, {label: 'right'}]}
 const lenses = {
@@ -643,6 +659,92 @@ const lenses = {
 const traverse = {seed:[], visit : (result, traversalState, tree) => {result.push(tree.label); return result;}}
 postOrderTraverseTree(lenses, traverse, tree)
 */
+// TODO: now do reduce, map, forEach, hint : might have to reconstruct the structure, so need upwards constructors
+// (prisms)
+
+/**
+ *
+ * @param {{getChildren : function}} lenses
+ * @param {{strategy : *, seed : *, visit : function}} traverse
+ * @param tree
+ * @returns {*}
+ */
+function reduceTree(lenses, traverse, tree) {
+  const strategy = traverse.strategy;
+  const strategies = {
+    BFS: breadthFirstTraverseTree,
+    PRE_ORDER: preorderTraverseTree,
+    POST_ORDER: postOrderTraverseTree
+  };
+
+  if (!(strategy in strategies)) throw `Unknown tree traversal strategy!`
+
+  return strategies[strategy](lenses, traverse, tree)
+}
+
+/**
+ * Applies a function to every node of a tree. Note that the traversal strategy does matter, as the function to
+ * apply might perform effects.
+ * @param {{getChildren : function}} lenses
+ * @param {{strategy : *, action : function}} traverse
+ * @param tree
+ * @returns {*}
+ */
+function forEachInTree(lenses, traverse, tree) {
+  const { strategy, action } = traverse;
+
+  const strategies = {
+    [BFS]: breadthFirstTraverseTree,
+    [PRE_ORDER]: preorderTraverseTree,
+    [POST_ORDER]: postOrderTraverseTree
+  };
+
+  if (!(strategy in strategies)) throw `Unknown tree traversal strategy!`
+
+  const treeTraveerse = {
+    seed: void 0,
+    visit: (accumulator, traversalState, tree) => action(tree, traversalState)
+  };
+  return strategies[strategy](lenses, treeTraveerse, tree)
+}
+
+/**
+ * Applies a function to every node of a tree, while keeping the tree structure. Note that the traversal strategy in
+ * that case does not matter, as all nodes will be traversed anyway, and the function to apply is assumed to be a
+ * pure function.
+ * @param {{getChildren : function, setChildren : function, setLabel : function}} lenses
+ * @param {function} mapFn Function to apply to each node.
+ * @param tree
+ * @returns {*}
+ */
+function mapOverTree(lenses, mapFn, tree) {
+  const { getChildren, setChildren, setLabel, getLabel } = lenses;
+  const isLeaf = tree => getChildren(tree).length === 0;
+  const getChildrenNumber = tree => getChildren(tree).length;
+  const stringify = path => path.join('.');
+  const treeTraveerse = {
+    seed: new WeakMap(),
+    visit: (weakMap, traversalState, tree) => {
+      const { path } = traversalState;
+      // Paths are *stringified* because Map with non-primitive objects uses referential equality
+      if (isLeaf(tree)) {
+        weakMap.set(stringify(path), setLabel(mapFn(getLabel(tree)), tree));
+      }
+      else {
+        const withUpdatedLabel = setLabel(mapFn(getLabel(tree)), tree);
+        const withUpdatedChildren = setChildren(
+          new Array(getChildrenNumber(tree)).map((_, index) => {
+            return weakMap.get(stringify(path.concat(index)))
+          }), withUpdatedLabel);
+        weakMap.set(stringify(path), withUpdatedChildren);
+      }
+
+      return weakMap
+    }
+  };
+  const weakMap = postOrderTraverseTree(lenses, treeTraveerse, tree);
+  return weakMap.get(stringify(PATH_ROOT))
+}
 
 function firebaseListToArray(fbList) {
   // will have {key1:element, key2...}
@@ -931,6 +1033,9 @@ export {
   stripHtmlTags,
   ERROR_MESSAGE_PREFIX,
   traverseTree,
+  breadthFirstTraverseTree,
+  preorderTraverseTree,
+  postOrderTraverseTree,
   firebaseListToArray,
   getInputValue,
   filterNull,
@@ -953,5 +1058,5 @@ export {
   makePatternMatcher,
   isNextNotification,
   isCompletedNotification,
-  isErrorNotification
+  isErrorNotification,
 }
