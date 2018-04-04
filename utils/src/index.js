@@ -1,17 +1,16 @@
 import {
-  assoc, cond, curry, defaultTo, equals, flatten, isNil, keys, map, mapObjIndexed, pipe, reduce, reject, T, tap, uniq,
-  values
-} from "ramda"
-import Rx from "rx"
-import { div, nav } from "cycle-snabbdom"
-import toHTML from "snabbdom-to-html"
+  assoc, clone, cond, curry, defaultTo, equals, flatten, isNil, keys, map, mapObjIndexed, merge, pipe, reduce, reject,
+  T, tap, times, uniq, values
+} from "ramda";
+import Rx from "rx";
+import { div, nav } from "cycle-snabbdom";
+import toHTML from "snabbdom-to-html";
 // import { StandardError } from "standard-error"
-import formatObj from 'pretty-format'
-import { PATH_ROOT } from "../../tracing/src/properties"
+import formatObj from "pretty-format";
 
 const $ = Rx.Observable;
-const ERROR_MESSAGE_PREFIX = 'ERROR : '
-const DOM_SINK = 'DOM';
+const ERROR_MESSAGE_PREFIX = "ERROR : ";
+const DOM_SINK = "DOM";
 
 // Type checking typings
 /**
@@ -73,24 +72,30 @@ const DOM_SINK = 'DOM';
  */
 
 function isUndefined(obj) {
-  return typeof obj === 'undefined'
+  return typeof obj === "undefined";
 }
 
 function removeEmptyVNodes(arrVNode) {
-  return reduce((accNonEmptyVNodes, vNode) => {
-    return (isNullVNode(vNode)) ?
-      accNonEmptyVNodes :
-      (accNonEmptyVNodes.push(vNode), accNonEmptyVNodes)
-  }, [], arrVNode)
+  return reduce(
+    (accNonEmptyVNodes, vNode) => {
+      return isNullVNode(vNode)
+        ? accNonEmptyVNodes
+        : (accNonEmptyVNodes.push(vNode), accNonEmptyVNodes);
+    },
+    [],
+    arrVNode
+  );
 }
 
 function isNullVNode(vNode) {
-  return equals(vNode.children, []) &&
+  return (
+    equals(vNode.children, []) &&
     equals(vNode.data, {}) &&
     isUndefined(vNode.elm) &&
     isUndefined(vNode.key) &&
     isUndefined(vNode.sel) &&
     isUndefined(vNode.text)
+  );
 }
 
 /**
@@ -104,7 +109,7 @@ function isNullVNode(vNode) {
  * @returns {Array<*>}
  */
 function projectSinksOn(prop, obj) {
-  return map(x => x ? x[prop] : null, obj)
+  return map(x => (x ? x[prop] : null), obj);
 }
 
 /**
@@ -117,37 +122,37 @@ function projectSinksOn(prop, obj) {
  * @returns {Array<String>}
  */
 function getSinkNamesFromSinksArray(aSinks) {
-  return uniq(flatten(map(getValidKeys, aSinks)))
+  return uniq(flatten(map(getValidKeys, aSinks)));
 }
 
 function getValidKeys(obj) {
-  let validKeys = []
+  let validKeys = [];
   mapObjIndexed((value, key) => {
     if (value != null) {
-      validKeys.push(key)
+      validKeys.push(key);
     }
-  }, obj)
+  }, obj);
 
-  return validKeys
+  return validKeys;
 }
 
 function makeDivVNode(x) {
   return {
-    "children": undefined,
-    "data": {},
-    "elm": undefined,
-    "key": undefined,
-    "sel": "div",
-    "text": x
-  }
+    children: undefined,
+    data: {},
+    elm: undefined,
+    key: undefined,
+    sel: "div",
+    text: x
+  };
 }
 
 function vLift(vNode) {
   return function vLift(sources, settings) {
     return {
       [DOM_SINK]: $.of(vNode)
-    }
-  }
+    };
+  };
 }
 
 /**
@@ -156,11 +161,11 @@ function vLift(vNode) {
  * @returns {Component}
  */
 function Div() {
-  return vLift(div.apply(null, arguments))
+  return vLift(div.apply(null, arguments));
 }
 
 function Nav() {
-  return vLift(nav.apply(null, arguments))
+  return vLift(nav.apply(null, arguments));
 }
 
 /**
@@ -169,19 +174,19 @@ function Nav() {
  * @param {Rx.Observable} source
  */
 function labelSourceWith(label, source) {
-  return source.map(x => ({ [label]: x }))
+  return source.map(x => ({ [label]: x }));
 }
 
 function EmptyComponent(sources, settings) {
   return {
-    [DOM_SINK]: $.of(div(''))
-  }
+    [DOM_SINK]: $.of(div(""))
+  };
 }
 
 function DummyComponent(sources, settings) {
   return {
-    [DOM_SINK]: $.of(div('dummy content'))
-  }
+    [DOM_SINK]: $.of(div("dummy content"))
+  };
 }
 
 /**
@@ -198,23 +203,28 @@ function emitNullIfEmpty(sink) {
     ? null
     : $.create(function emitNullIfEmptyObs(observer) {
       let isEmpty = true;
-      sink.subscribe(function next(x) {
-        isEmpty = false;
-        observer.onNext(x);
-      }, function error(e) {
-        console.error(`emitNullIfEmpty > Error!`, e);
-        observer.onError(e);
-      }, function completed() {
-        if (isEmpty) {
-          observer.onNext(null);
+
+      sink.subscribe(
+        function next(x) {
+          isEmpty = false;
+          observer.onNext(x);
+        },
+        function error(e) {
+          console.error(`emitNullIfEmpty > Error!`, e);
+          observer.onError(e);
+        },
+        function completed() {
+          if (isEmpty) {
+            observer.onNext(null);
+          }
+          observer.onCompleted();
         }
-        observer.onCompleted();
-      });
+      );
 
       return function dispose() {
         // No clean-up necessary
-      }
-    })
+      };
+    });
   /*
     return isNil(sink) ?
       null :
@@ -231,8 +241,7 @@ function emitNullIfEmpty(sink) {
  * fulfilled. Predicates are tested in order of indexing of the array.
  * - `_index` the index in the array where a predicate was fulfilled if
  * any, undefined otherwise
- * Ex : unfoldObjOverload('DOM', {sourceName: isString, predicate:
-    * isPredicate})
+ * Ex : unfoldObjOverload('DOM', {sourceName: isString, predicate: isPredicate})
  * Result : {sourceName : 'DOM'}
  * @param obj
  * @param {Array<Object.<string, Predicate>>} overloads
@@ -250,21 +259,21 @@ function unfoldObjOverload(obj, overloads) {
 
     if (predicateEval) {
       result[property] = obj;
-      result._index = index
+      result._index = index;
     }
     index++;
 
-    return predicateEval
+    return predicateEval;
   });
-  return result
+  return result;
 }
 
 function isBoolean(obj) {
-  return typeof(obj) === 'boolean'
+  return typeof obj === "boolean";
 }
 
 function isString(obj) {
-  return typeof(obj) === 'string'
+  return typeof obj === "string";
 }
 
 // from https://github.com/substack/deep-freeze/blob/master/index.js
@@ -288,13 +297,13 @@ function makeErrorMessage(errorMessage) {
 }
 
 function removeNullsFromArray(arr) {
-  return reject(isNil, arr)
+  return reject(isNil, arr);
 }
 
 //IE workaround for lack of function name property on Functions
 //getFunctionName :: (* -> *) -> String
 const getFunctionName = (r => fn => {
-  return fn.name || ((('' + fn).match(r) || [])[1] || 'Anonymous');
+  return fn.name || ((("" + fn).match(r) || [])[1] || "Anonymous");
 })(/^\s*function\s*([^\(]*)/i);
 
 // cf.
@@ -346,18 +355,23 @@ function NamedFunction(name, args, body, scope, values) {
 function decorateWithOne(decoratorSpec, fnToDecorate) {
   const fnToDecorateName = getFunctionName(fnToDecorate);
 
-  return NamedFunction(fnToDecorateName, [], `
+  return NamedFunction(
+    fnToDecorateName,
+    [],
+    `
       const args = [].slice.call(arguments);
       const decoratingFn = makeFunctionDecorator(decoratorSpec);
       return decoratingFn(args, fnToDecorateName, fnToDecorate);
 `,
-    { makeFunctionDecorator, decoratorSpec, fnToDecorate, fnToDecorateName }, undefined);
+    { makeFunctionDecorator, decoratorSpec, fnToDecorate, fnToDecorateName },
+    undefined
+  );
 }
 
 const decorateWith = curry(function decorateWith(decoratingFnsSpecs, fnToDecorate) {
   return decoratingFnsSpecs.reduce((acc, decoratingFn) => {
-    return decorateWithOne(decoratingFn, acc)
-  }, fnToDecorate)
+    return decorateWithOne(decoratingFn, acc);
+  }, fnToDecorate);
 });
 
 /**
@@ -372,11 +386,11 @@ const decorateWith = curry(function decorateWith(decoratingFnsSpecs, fnToDecorat
  */
 function makeFunctionDecorator({ before, after, name }) {
   // we can have one of the two not specified, but if we have none, there is no decorator to make
-  if ((typeof before !== 'function') && (typeof after !== 'function')) {
-    throw `makeFunctionDecorator: you need to specify 'before' OR 'after' as decorating functions. You passed falsy values for both!`
+  if (typeof before !== "function" && typeof after !== "function") {
+    throw `makeFunctionDecorator: you need to specify 'before' OR 'after' as decorating functions. You passed falsy values for both!`;
   }
 
-  const decoratorFnName = defaultTo('anonymousDecorator', name);
+  const decoratorFnName = defaultTo("anonymousDecorator", name);
 
   // trick to get the same name for the returned function
   // cf.
@@ -389,9 +403,7 @@ function makeFunctionDecorator({ before, after, name }) {
 
       const result = fnToDecorate(...args);
 
-      return after
-        ? after(result, fnToDecorateName, fnToDecorate)
-        : result;
+      return after ? after(result, fnToDecorateName, fnToDecorate) : result;
     }
   };
 
@@ -407,8 +419,8 @@ const assertFunctionContractDecoratorSpecs = fnContract => ({
     if (!isBoolean(passed) || (isBoolean(passed) && !passed)) {
       // contract is failed
       console.error(`assertFunctionContractDecorator: ${fnToDecorateName} fails contract ${contractFnName} \n
-${isString(passed) ? passed : ''}`);
-      throw `assertFunctionContractDecorator: ${fnToDecorateName} fails contract ${contractFnName}`
+${isString(passed) ? passed : ""}`);
+      throw `assertFunctionContractDecorator: ${fnToDecorateName} fails contract ${contractFnName}`;
     }
   },
   after: (result, fnToDecorateName) => {
@@ -419,8 +431,8 @@ ${isString(passed) ? passed : ''}`);
     if (!isBoolean(passed) || (isBoolean(passed) && !passed)) {
       // contract is failed
       console.error(`assertFunctionContractDecorator: ${fnToDecorateName} fails contract ${contractFnName} \n
-${isString(passed) ? passed : ''}`);
-      throw `assertFunctionContractDecorator: ${fnToDecorateName} fails contract ${contractFnName}`
+${isString(passed) ? passed : ""}`);
+      throw `assertFunctionContractDecorator: ${fnToDecorateName} fails contract ${contractFnName}`;
     }
 
     return result;
@@ -428,20 +440,20 @@ ${isString(passed) ? passed : ''}`);
 });
 
 function preventDefault(ev) {
-  if (ev) ev.preventDefault()
+  if (ev) ev.preventDefault();
 }
 
 function addPrefix(prefix) {
   return function (str) {
-    return prefix + str
-  }
+    return prefix + str;
+  };
 }
 
-function noop() {
+function noop() {}
 
+function toBoolean(x) {
+  return !!x;
 }
-
-function toBoolean(x) {return !!x}
 
 /**
  * Returns a function which turns an object to be put at a given path location into an array of
@@ -451,11 +463,7 @@ function toBoolean(x) {return !!x}
  */
 function toJsonPatch(path) {
   return pipe(
-    mapObjIndexed((value, key) => ({
-      op: "add",
-      path: [path, key].join('/'),
-      value: value
-    })),
+    mapObjIndexed((value, key) => ({ op: "add", path: [path, key].join("/"), value: value })),
     values
   );
 }
@@ -468,7 +476,7 @@ function stripHtmlTags(html) {
 
   tmp.remove();
 
-  return strippedContent
+  return strippedContent;
 }
 
 /**
@@ -484,8 +492,7 @@ function stripHtmlTags(html) {
  * @param {Function} getChildrenFn give the children for a given node
  * @param root the root node of the tree to traverse
  */
-function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn, getChildrenFn },
-                      root) {
+function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn, getChildrenFn }, root) {
   const traversalResult = [];
   const store = new StoreConstructor();
   pushFn(store, root);
@@ -495,7 +502,7 @@ function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn
     getChildrenFn(vnode).forEach((child, index) => pushFn(store, child));
   }
 
-  return traversalResult
+  return traversalResult;
 }
 
 // TODO : traverseTree, adding concat monoidal function, and monoidal empty
@@ -508,13 +515,13 @@ function traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, visitFn
 // Tree T :: Leaf T | [Tree T]
 // visitFn should be a reducer :: acc -> Tree -> acc'
 const PATH_ROOT = [0];
-const POST_ORDER = 'POST_ORDER';
-const PRE_ORDER = 'PRE_ORDER';
-const BFS = 'BFS';
+export const POST_ORDER = "POST_ORDER";
+export const PRE_ORDER = "PRE_ORDER";
+export const BFS = "BFS";
 
 /**
  *
- * @param {WeakMap} traversalState
+ * @param {Map} traversalState
  * @param subTree
  * @param {Array} subTreeChildren
  * @modifies {traversalState}
@@ -522,31 +529,46 @@ const BFS = 'BFS';
 function updatePathInTraversalState(traversalState, subTree, subTreeChildren) {
   subTreeChildren.forEach((subTreeChild, index) => {
     const traversalStateParent = traversalState.get(subTree);
-    traversalState.set(subTreeChild, { isAdded: true, isVisited: false, path: traversalStateParent.path.concat(index) })
+    // NOTE : if the path is already set we do not modify it. This allows for post-order traversal, which puts back
+    // the parent node into the children nodes to keep the original path for the parent node. So at any time, the
+    // `path` value can be trusted to be accurately describing the location of the node in the tree
+    const traversalStateChild = traversalState.get(subTreeChild);
+    const currentChildPath = traversalStateChild && traversalStateChild.path;
+
+    traversalState.set(
+      subTreeChild,
+      merge(traversalStateChild, {
+        isAdded: true,
+        isVisited: false,
+        path: currentChildPath || traversalStateParent.path.concat(index)
+      })
+    );
   });
 }
 
 /**
  *
- * @param {WeakMap} traversalState
+ * @param {Map} traversalState
  * @param tree
  * @modifies {traversalState}
  */
 function updateVisitInTraversalState(traversalState, tree) {
-  const localTraversalState = traversalState.get(tree);
-  const { isVisited, isAdded, path } = localTraversalState;
-  traversalState.set(tree, { isVisited: true, isAdded, path })
+  traversalState.set(
+    tree,
+    merge(traversalState.get(tree), { isVisited: true })
+  );
 }
 
 function visitTree(traversalSpecs, tree) {
   const { store, lenses, traverse } = traversalSpecs;
   const { empty, add, takeAndRemoveOne, isEmpty } = store;
-  const { getChildren, getLabel, setChildren, setLabel, isRoot, isLeaf, hasChildren } = lenses;
+  const { getChildren, getLabel, setChildren, setLabel } = lenses;
   const { visit, seed } = traverse;
-  const traversalState = new WeakMap();
+  const traversalState = new Map();
 
-  let currentStore = empty;
-  let visitAcc = seed;
+  // necessary to avoid destructive updates on input parameters
+  let currentStore = clone(empty);
+  let visitAcc = clone(seed);
   add([tree], currentStore);
   traversalState.set(tree, { isAdded: true, isVisited: false, path: PATH_ROOT });
 
@@ -560,44 +582,42 @@ function visitTree(traversalSpecs, tree) {
     updateVisitInTraversalState(traversalState, subTree);
   }
 
-  return visitAcc
+  traversalState.clear();
+
+  return visitAcc;
 }
 
 function breadthFirstTraverseTree(lenses, traverse, tree) {
+  const { getChildren } = lenses;
   const traversalSpecs = {
     store: {
       empty: [],
       takeAndRemoveOne: store => store.shift(),
-      isEmpty: store => Boolean(store.length === 0),
-      add: (subTrees, store) => store.push(...subTrees)
+      isEmpty: store => store.length === 0,
+      add: (subTrees, store) => store.push.apply(store, subTrees)
     },
-    lenses: {
-      ...lenses,
-      getChildren: (traversalState, subTree) => lenses.getChildren(subTree)
-    },
+    lenses: { getChildren: (traversalState, subTree) => getChildren(subTree) },
     traverse
   };
 
-  return visitTree(traversalSpecs, tree)
+  return visitTree(traversalSpecs, tree);
 }
 
 function preorderTraverseTree(lenses, traverse, tree) {
+  const { getChildren } = lenses;
   const traversalSpecs = {
     store: {
       empty: [],
       takeAndRemoveOne: store => store.shift(),
-      isEmpty: store => Boolean(store.length === 0),
+      isEmpty: store => store.length === 0,
       // NOTE : vs. bfs, only `add` changes
       add: (subTrees, store) => store.unshift(...subTrees)
     },
-    lenses: {
-      ...lenses,
-      getChildren: (traversalState, subTree) => lenses.getChildren(subTree)
-    },
+    lenses: { getChildren: (traversalState, subTree) => getChildren(subTree) },
     traverse
   };
 
-  return visitTree(traversalSpecs, tree)
+  return visitTree(traversalSpecs, tree);
 }
 
 function postOrderTraverseTree(lenses, traverse, tree) {
@@ -608,9 +628,9 @@ function postOrderTraverseTree(lenses, traverse, tree) {
     // For post-order, add the parent at the end of the children, that simulates the stack for the recursive function
     // call in the recursive post-order traversal algorithm
     getChildren: (traversalState, tree) =>
-      (traversalState.get(tree).isVisited || isLeaf(tree))
+      traversalState.get(tree).isVisited || isLeaf(tree)
         ? []
-        : getChildren(tree).concat(tree),
+        : getChildren(tree).concat(tree)
   };
   const traversalSpecs = {
     store: {
@@ -630,37 +650,25 @@ function postOrderTraverseTree(lenses, traverse, tree) {
         // 3. label has not been visited, and there are children : don't visit, will do it later
         if (localTraversalState.isVisited) {
           visit(result, traversalState, tree);
-        }
-        else {
+        } else {
           if (isLeaf(tree)) {
             visit(result, traversalState, tree);
-          }
-          else {
+          } else {
             //
           }
         }
 
-        return result
+        return result;
       }
     }
   };
 
-  return visitTree(traversalSpecs, tree)
+  return visitTree(traversalSpecs, tree);
 }
 
 // DOC:  because this uses Map, every node MUST be a different object. It is easy to be the case for nodes, but less
 // obvious for leaves. Leaves MUST all be different object!!!
-
-/* TEST DATA
-const tree = {label : 'root', children : [{label : 'left'}, {label: 'middle', children : [{label : 'midleft'}, {label:'midright'}]}, {label: 'right'}]}
-const lenses = {
-  getChildren : tree => tree.children || [],
-};
-const traverse = {seed:[], visit : (result, traversalState, tree) => {result.push(tree.label); return result;}}
-postOrderTraverseTree(lenses, traverse, tree)
-*/
-// TODO: now do reduce, map, forEach, hint : might have to reconstruct the structure, so need upwards constructors
-// (prisms)
+// TODO : put in separate library
 
 /**
  *
@@ -677,9 +685,9 @@ function reduceTree(lenses, traverse, tree) {
     POST_ORDER: postOrderTraverseTree
   };
 
-  if (!(strategy in strategies)) throw `Unknown tree traversal strategy!`
+  if (!(strategy in strategies)) throw `Unknown tree traversal strategy!`;
 
-  return strategies[strategy](lenses, traverse, tree)
+  return strategies[strategy](lenses, traverse, tree);
 }
 
 /**
@@ -699,13 +707,13 @@ function forEachInTree(lenses, traverse, tree) {
     [POST_ORDER]: postOrderTraverseTree
   };
 
-  if (!(strategy in strategies)) throw `Unknown tree traversal strategy!`
+  if (!(strategy in strategies)) throw `Unknown tree traversal strategy!`;
 
   const treeTraveerse = {
     seed: void 0,
     visit: (accumulator, traversalState, tree) => action(tree, traversalState)
   };
-  return strategies[strategy](lenses, treeTraveerse, tree)
+  return strategies[strategy](lenses, treeTraveerse, tree);
 }
 
 /**
@@ -718,48 +726,43 @@ function forEachInTree(lenses, traverse, tree) {
  * @returns {*}
  */
 function mapOverTree(lenses, mapFn, tree) {
-  const { getChildren, setChildren, setLabel, getLabel } = lenses;
-  const isLeaf = tree => getChildren(tree).length === 0;
+  const { getChildren, constructTree, getLabel } = lenses;
   const getChildrenNumber = tree => getChildren(tree).length;
-  const stringify = path => path.join('.');
+  const stringify = path => path.join(".");
   const treeTraveerse = {
-    seed: new WeakMap(),
-    visit: (weakMap, traversalState, tree) => {
-      const { path } = traversalState;
+    seed: new Map(),
+    visit: (pathMap, traversalState, tree) => {
+      const { path } = traversalState.get(tree);
       // Paths are *stringified* because Map with non-primitive objects uses referential equality
-      if (isLeaf(tree)) {
-        weakMap.set(stringify(path), setLabel(mapFn(getLabel(tree)), tree));
-      }
-      else {
-        const withUpdatedLabel = setLabel(mapFn(getLabel(tree)), tree);
-        const withUpdatedChildren = setChildren(
-          new Array(getChildrenNumber(tree)).map((_, index) => {
-            return weakMap.get(stringify(path.concat(index)))
-          }), withUpdatedLabel);
-        weakMap.set(stringify(path), withUpdatedChildren);
-      }
+      const mappedLabel = mapFn(getLabel(tree));
+      const mappedChildren = times(index => pathMap.get(stringify(path.concat(index))), getChildrenNumber(tree));
+      const mappedTree= constructTree(mappedLabel, mappedChildren) ;
+      pathMap.set(stringify(path), mappedTree);
 
-      return weakMap
+      return pathMap;
     }
   };
-  const weakMap = postOrderTraverseTree(lenses, treeTraveerse, tree);
-  return weakMap.get(stringify(PATH_ROOT))
+  const pathMap = postOrderTraverseTree(lenses, treeTraveerse, tree);
+  const mappedTree = pathMap.get(stringify(PATH_ROOT));
+  pathMap.clear();
+
+  return mappedTree;
 }
 
 function firebaseListToArray(fbList) {
   // will have {key1:element, key2...}
-  return values(fbList)
+  return values(fbList);
 }
 
 function getInputValue(document, sel) {
   const el = document.querySelector(sel);
-  return el ? el.value : ''
+  return el ? el.value : "";
 }
 
 function filterNull(driver) {
   return function filteredDOMDriver(sink$) {
-    return driver(sink$.filter(Boolean))
-  }
+    return driver(sink$.filter(Boolean));
+  };
 }
 
 // debug
@@ -785,57 +788,50 @@ const logFnTrace = (title, paramSpecs) => ({
     console.info(`==> ${title.toUpperCase()} | ${fnToDecorateName}(${paramSpecs.join(', ')}): `, args),
   after: (result, fnToDecorateName) => {
     console.info(`<== ${title.toUpperCase()} | ${fnToDecorateName} <- `, result);
-    return result
-  },
+    return result;
+  }
 });
 
 function toHTMLorNull(x) {
-  return x ? toHTML(x) : null
+  return x ? toHTML(x) : null;
 }
 
 function convertVNodesToHTML(vNodeOrVnodes) {
   if (Array.isArray(vNodeOrVnodes)) {
-    console.debug(`toHTML: ${vNodeOrVnodes.map(x => x ? toHTML(x) : null)}`)
-    return vNodeOrVnodes.map(toHTMLorNull)
-  }
-  else {
-    console.debug(`toHTML: ${toHTMLorNull(vNodeOrVnodes)}`)
-    return toHTMLorNull(vNodeOrVnodes)
+    console.debug(`toHTML: ${vNodeOrVnodes.map(x => (x ? toHTML(x) : null))}`);
+    return vNodeOrVnodes.map(toHTMLorNull);
+  } else {
+    console.debug(`toHTML: ${toHTMLorNull(vNodeOrVnodes)}`);
+    return toHTMLorNull(vNodeOrVnodes);
   }
 }
 
 function formatArrayObj(arr, separator) {
-  return arr.map(format).join(separator)
+  return arr.map(format).join(separator);
 }
 
 function format(obj) {
   // basically if obj is an object, use formatObj, else use toString
-  if (obj === 'null') {
-    return '<null>'
-  }
-  else if (obj === 'undefined') {
-    return '<undefined>'
-  }
-  else if (typeof(obj) === 'string' && obj.length === 0) {
-    return '<empty string>'
-  }
-  else if (Array.isArray(obj)) {
-    return formatArrayObj(obj, ' ; ')
-  }
-  else if (typeof(obj) === 'object') {
+  if (obj === "null") {
+    return "<null>";
+  } else if (obj === "undefined") {
+    return "<undefined>";
+  } else if (typeof obj === "string" && obj.length === 0) {
+    return "<empty string>";
+  } else if (Array.isArray(obj)) {
+    return formatArrayObj(obj, " ; ");
+  } else if (typeof obj === "object") {
     if (keys(obj).length === 0) {
       // i.e. object is {}
-      return '<empty object>'
-    }
-    else return formatObj(obj, { maxDepth: 3 })
-  }
-  else {
-    return "" + obj
+      return "<empty object>";
+    } else return formatObj(obj, { maxDepth: 3 });
+  } else {
+    return "" + obj;
   }
 }
 
 function traceFn(fn, text) {
-  return pipe(fn, tap(console.warn.bind(console, text ? text + ":" : "")))
+  return pipe(fn, tap(console.warn.bind(console, text ? text + ":" : "")));
 }
 
 /**
@@ -858,18 +854,21 @@ const decorateWithAdvices = curry(_decorateWithAdvices);
  */
 function _decorateWithAdvices(advices, fnToAdvise) {
   return advices.reduce((acc, advice) => {
-    return decorateWithAdvice(advice, acc)
-  }, fnToAdvise)
+    return decorateWithAdvice(advice, acc);
+  }, fnToAdvise);
 }
 
 function isAdvised(fn) {
-  return Boolean(fn && fn.isAdvised)
+  return Boolean(fn && fn.isAdvised);
 }
 
 function decorateWithAdvice(advice, fnToAdvise) {
   const fnToDecorateName = getFunctionName(fnToAdvise);
 
-  const advisedFn = NamedFunction(fnToDecorateName, [], `
+  const advisedFn = NamedFunction(
+    fnToDecorateName,
+    [],
+    `
       const args = [].slice.call(arguments);
       const decoratingFn = makeAdvisedFunction(advice);
       const joinpoint = {args, fnToDecorateName};
@@ -880,29 +879,26 @@ function decorateWithAdvice(advice, fnToAdvise) {
   // keep track of the original function, to be able to remove advice down the road
   advisedFn.fn = fnToAdvise;
 
-  return advisedFn
+  return advisedFn;
 }
 
 function makeAdvisedFunction(advice) {
   // Contract :
   // if `around` is correctly set, then there MUST NOT be a `before` and `after`
   // if `around` is not set, there MUST be EITHER `before` OR `after`
-  if ('around' in advice && typeof(advice.around) === 'function') {
-    if ('before' in advice || 'after' in advice) {
-      throw `makeAdvisedFunction: if 'around' is set, then there MUST NOT be a 'before' or 'after' property`
-    }
-    else {
+  if ("around" in advice && typeof advice.around === "function") {
+    if ("before" in advice || "after" in advice) {
+      throw `makeAdvisedFunction: if 'around' is set, then there MUST NOT be a 'before' or 'after' property`;
+    } else {
       // Main case : AROUND advice
       return function aroundAdvisedFunction(joinpoint, fnToDecorate) {
         // NOTE : could be shorten, but left as is for readability
-        return advice.around(joinpoint, fnToDecorate)
-      }
+        return advice.around(joinpoint, fnToDecorate);
+      };
     }
-  }
-  else if (!('before' in advice || 'after' in advice)) {
-    throw `makeAdvisedFunction: if 'around' is not set, then there MUST be EITHER 'before' OR 'after' property`
-  }
-  else {
+  } else if (!("before" in advice || "after" in advice)) {
+    throw `makeAdvisedFunction: if 'around' is not set, then there MUST be EITHER 'before' OR 'after' property`;
+  } else {
     // Main case : BEFORE or/and AFTER advice
     return function advisedFunction(joinpoint, fnToDecorate) {
       const { args, fnToDecorateName } = joinpoint;
@@ -924,9 +920,8 @@ function makeAdvisedFunction(advice) {
         // Include the exception information in the joinpoint
         afterThrowing && afterThrowing(assoc('exception', _exception, joinpoint), fnToDecorate);
         exception = _exception;
-        throw _exception
-      }
-      finally {
+        throw _exception;
+      } finally {
         // We execute `after` advice even if advised function throws
         after && after(merge({ returnedValue: result, exception }, joinpoint), fnToDecorate);
       }
@@ -936,16 +931,15 @@ function makeAdvisedFunction(advice) {
 
 function removeAdvice(advisedFn) {
   if (!isAdvised(advisedFn)) {
-    throw `removeAdvice : cannot remove advice on function : it is not advised in the first place!`
-  }
-  else {
-    return advisedFn.fn
+    throw `removeAdvice : cannot remove advice on function : it is not advised in the first place!`;
+  } else {
+    return advisedFn.fn;
   }
 }
 
-const ONE_COMPONENT_ONLY = 'one_component_only';
-const CONTAINER_AND_CHILDREN = 'container_and_children';
-const CHILDREN_ONLY = 'children_only';
+const ONE_COMPONENT_ONLY = "one_component_only";
+const CONTAINER_AND_CHILDREN = "container_and_children";
+const CHILDREN_ONLY = "children_only";
 /** @type Array<[]>*/
 const componentTreePatternMatchingPredicates = [
   [ONE_COMPONENT_ONLY, componentTree => isNil(componentTree[1])],
@@ -972,7 +966,10 @@ const componentTreePatternMatchingPredicates = [
  * @param {Array<[CaseName, Predicate]>} patternMatchingPredicates
  * @param {Object.<CaseName, Expression>} patternMatchingExpressions
  */
-function makePatternMatcher(patternMatchingPredicates, patternMatchingExpressions) {
+function makePatternMatcher(
+  patternMatchingPredicates,
+  patternMatchingExpressions
+) {
   // TODO : check inputs' type contracts
 
   const conditions = patternMatchingPredicates.map(([caseName, predicate]) => {
@@ -982,24 +979,21 @@ function makePatternMatcher(patternMatchingPredicates, patternMatchingExpression
       console.error(`makePatternMatcher : case ${caseName} does not have matching expression!`, patternMatchingExpressions);
       throw `makePatternMatcher : case ${caseName} does not have matching expression!`
     }
-    else {
-      return [predicate, caseHandler]
-    }
-  })
+  });
 
-  return cond(conditions)
+  return cond(conditions);
 }
 
 function isNextNotification(notification) {
-  return notification.kind === 'N'
+  return notification.kind === "N";
 }
 
 function isCompletedNotification(notification) {
-  return notification.kind === 'C'
+  return notification.kind === "C";
 }
 
 function isErrorNotification(notification) {
-  return notification.kind === 'E'
+  return notification.kind === "E";
 }
 
 export {
@@ -1033,9 +1027,13 @@ export {
   stripHtmlTags,
   ERROR_MESSAGE_PREFIX,
   traverseTree,
+  visitTree,
   breadthFirstTraverseTree,
   preorderTraverseTree,
   postOrderTraverseTree,
+  reduceTree,
+  forEachInTree,
+  mapOverTree,
   firebaseListToArray,
   getInputValue,
   filterNull,
@@ -1058,5 +1056,5 @@ export {
   makePatternMatcher,
   isNextNotification,
   isCompletedNotification,
-  isErrorNotification,
-}
+  isErrorNotification
+};
