@@ -4,7 +4,7 @@ import * as QUnit from "qunitjs";
 import {
   addPrefix,
   BFS, breadthFirstTraverseTree, forEachInTree, mapOverTree, POST_ORDER, postOrderTraverseTree, PRE_ORDER,
-  preorderTraverseTree,
+  preorderTraverseTree, pruneWhen,
   reduceTree,
   visitTree
 } from "../utils/src";
@@ -198,6 +198,19 @@ QUnit.test("main case - mapOverTree", function exec_test(assert) {
     ],
     "label": "Map:root"
   };
+
+  assert.deepEqual(actual, expected, `Fails!`);
+});
+
+QUnit.test("main case - pruneWhen", function exec_test(assert) {
+  const getChildren = tree => tree.children || [];
+  const getLabel = tree => tree.label || '';
+  const constructTree = (label, trees) => ({label, children : trees});
+  const predicate = (tree, traversalState) => traversalState.get(tree).path.length > 1;
+  const lenses = { getChildren, constructTree, getLabel };
+
+  const actual = pruneWhen(lenses, predicate, tree);
+  const expected = {};
 
   assert.deepEqual(actual, expected, `Fails!`);
 });

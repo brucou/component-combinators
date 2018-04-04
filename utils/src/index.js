@@ -622,15 +622,17 @@ function preorderTraverseTree(lenses, traverse, tree) {
 
 function postOrderTraverseTree(lenses, traverse, tree) {
   const { getChildren } = lenses;
-  const isLeaf = tree => getChildren(tree).length === 0;
+  const isLeaf = (tree, traversalState) => getChildren(tree, traversalState).length === 0;
   const { seed, visit } = traverse;
+  const predicate = (tree, traversalState) => traversalState.get(tree).isVisited || isLeaf(tree, traversalState)
   const decoratedLenses = {
     // For post-order, add the parent at the end of the children, that simulates the stack for the recursive function
     // call in the recursive post-order traversal algorithm
+    // DOC : getChildren(tree, traversalState) also admit traversalState as argumnets but in second place
     getChildren: (traversalState, tree) =>
-      traversalState.get(tree).isVisited || isLeaf(tree)
+      predicate(tree, traversalState)
         ? []
-        : getChildren(tree).concat(tree)
+        : getChildren(tree, traversalState).concat(tree)
   };
   const traversalSpecs = {
     store: {
@@ -648,14 +650,8 @@ function postOrderTraverseTree(lenses, traverse, tree) {
         // 1. label has been visited already : visit
         // 2. label has not been visited, and there are no children : visit
         // 3. label has not been visited, and there are children : don't visit, will do it later
-        if (localTraversalState.isVisited) {
+        if (predicate(tree, traversalState)) {
           visit(result, traversalState, tree);
-        } else {
-          if (isLeaf(tree)) {
-            visit(result, traversalState, tree);
-          } else {
-            //
-          }
         }
 
         return result;
@@ -727,7 +723,7 @@ function forEachInTree(lenses, traverse, tree) {
  */
 function mapOverTree(lenses, mapFn, tree) {
   const { getChildren, constructTree, getLabel } = lenses;
-  const getChildrenNumber = tree => getChildren(tree).length;
+  const getChildrenNumber = (tree, traversalState) => getChildren(tree, traversalState).length;
   const stringify = path => path.join(".");
   const treeTraveerse = {
     seed: new Map(),
@@ -735,7 +731,7 @@ function mapOverTree(lenses, mapFn, tree) {
       const { path } = traversalState.get(tree);
       // Paths are *stringified* because Map with non-primitive objects uses referential equality
       const mappedLabel = mapFn(getLabel(tree));
-      const mappedChildren = times(index => pathMap.get(stringify(path.concat(index))), getChildrenNumber(tree));
+      const mappedChildren = times(index => pathMap.get(stringify(path.concat(index))), getChildrenNumber(tree, traversalState));
       const mappedTree= constructTree(mappedLabel, mappedChildren) ;
       pathMap.set(stringify(path), mappedTree);
 
@@ -747,6 +743,31 @@ function mapOverTree(lenses, mapFn, tree) {
   pathMap.clear();
 
   return mappedTree;
+}
+
+/**
+ * Returns a tree where all children of nodes which fails a predicate are pruned
+ * @param {function} predicate
+ * @param tree
+ * @returns tree
+ */
+function pruneWhen(lenses, predicate, tree){
+  // As we need to return a tree, it will be convenient to use mapOverTree
+  const {getChildren} = lenses;
+  const pruneLenses = merge(lenses, {
+    getChildren : (tree, traversalState) => {
+      if  (predicate(tree, traversalState)) {
+        // prune that branch
+        return []
+      }
+      else {
+        return getChildren(tree, traversalState)
+      }
+    }
+  });
+  const prunedTree = mapOverTree(pruneLenses, x => x, tree);
+
+  return prunedTree
 }
 
 function firebaseListToArray(fbList) {
@@ -1034,6 +1055,7 @@ export {
   reduceTree,
   forEachInTree,
   mapOverTree,
+  pruneWhen,
   firebaseListToArray,
   getInputValue,
   filterNull,
