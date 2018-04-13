@@ -82,6 +82,7 @@
   },
   "dependencies": {
     "pretty-format": "^22.1.0",
+    "fp-rosetree": "^0.2.3",
     "ramda": "^0.25.0",
     "snabbdom-to-html": "^3.1.1",
     "rx": "^4.1.0"

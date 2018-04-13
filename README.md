@@ -475,7 +475,7 @@ function NavigationContainerComponent(sources, settings) {
 }
 
 function Navigation(navigationSettings, componentArray) {
-  return m({}, (navigationSettings, [NavigationContainerComponent, componentArray])
+  return m({}, navigationSettings, [NavigationContainerComponent, componentArray])
 }
 ```
 

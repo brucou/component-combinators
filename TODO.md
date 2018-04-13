@@ -18,11 +18,28 @@ Combine (object) or InjectSettings(function, use to adapt settings). Worse case,
 ## UI
 ### Tree component alternative
 - Have a TreeNode, TreeNodes, TreeRoot component
-- Have a Tree component so that Tree({...}, [TreeEmpty, TreeRoot, TreeNode, TreeLeaf])
-- Then in settings I have the current tree : which is displayed, target tree : the tree to display.
-  - coudl also have current tree, and target tree JSON patch
-- Then in the Tree component
-  - ex : [Root, [N0, N1]]
+- Have a Tree component so that Tree({treeSource: SourceName, uiState:Name}, [TreeEmpty, 
+TreeRoot, TreeNode, TreeLeaf])
+
+```dart
+InjectCircularSources({behaviour:..., event :...}, [
+  InjectSources(ui state -> treeSource.sample(UI_state), [
+    ForEach({treeSource, as : tree}, [
+      DisplayTree({ui state$, tree}, [
+        TreeEmpty, TreeRoot, TreeNode, TreeLeaf
+      ])
+    ])
+  ])
+])
+
+```
+
+- ui state is updated with each new tree, so that new nodes are matched to new default values in 
+UI state (not expanded, etc.) -> that behaviour should be parametrized
+- for each new tree, that is tree is visualized as f(ui state, tree)
+
+- Then in the DisplayTree component
+  - ex : tree = [Root, [N0, N1]]
     - return m({}, [TreeRoot, [m({nodePath}, [N0]), m({nodePath}, [N1])]])
       - N0 and N1 are passed in settings.nodePath the path for their node and keep the target tree
       - N0 and N1 are TreeLeaf here
@@ -78,40 +95,6 @@ Pipe improvement
   - that way I don't have to know which are the sinks to keep
   
 ### Tree component
-- Tree manipulation library
-  - createTree (obj, tree fns)
-    - just put the fns in an object
-  - getTraversalterator(tree, strategy)
-  - traverseTree(iterator, doFn, skipChildrenPredicate) (i.e. advanced reduce)
-  - updateTreeAt(nodePath) :: Tree -> NodePath -> NodeLens -> Tree
-  - NodeLens :: value -> Node -> Node
-- Interface
-  - Specs
-    - settings : cf. libraries : css, button open/close, icon for state expanded etc.
-      - conds : 
-        - display :: predicate -> tree? or node+location+state? -> html
-          - predicate examples : isLeaf, isRoot, isExpanded, isSelected etc. (i.e. pred. on the 
-          state of the row, or the state of the whole tree)
-    - events : right/left click, hover, check/uncheck, 
-    - actions i.e. outputs : event type, event target, event data, tree (local state + source 
-    tree),
-    - event type : rihgt/left/double click, hover etc.
-    - event target : selector (how else to point at it?), nodePath : NodePath, tree or just few 
-    operations like up, down, setAt lens???
-  - So basically passive component which displays a tree from its state according to a 
-  extensible predicate logic, and pass a selection of events, together with the part of the tree 
-  (data structure) and the part of the DOM tree where they happened
-  - that component later can be extended with :
-    - display a checkbox, associate to the checkbox an update of the tree DS, and some actions
-    - whatever else, see plugins from the libraries
-  - of course a ForEach (state is passed in settings) prior to it
-  - so ForEach(tree state source, [WithCheckBox, [WithTable, [Tree]]])
-    - or Pipe(Tree, WithCheckBox, WithTable) -> no! I need to impact both inputs and outputs i.e.
-     acts like an arrow not a monad
-    - actually plugin is [eventHandler, renderNode, skipChildren, updateStateTree]
-      - renderNode :: Tree -> NodePath -> HTML
-      - skipChildren :: Tree -> NodePath -> Boolean
-      - updateStateTree :: Tree -> NodePath -> Tree
 - Algorithm
   - logs | filter graph structure = [ComponentTree], trees are separated by runtime logs
   - ComponentTree -> initial UI_State_Tree (no selection, all expanded) -> HTML (via renderTree)
@@ -133,7 +116,7 @@ Pipe improvement
   - so we can have [WithCheckBox({UI_tree settings to which check box is added}, [UI_Tree])]
 
 # Core
-- Think if/for which operator to remove passing settings down the tree (cf. InjectLocalState.js)
+- Think if/for which operator to remove passing settings down the tree (cf. InjectCircularSources.js)
 - // TODO : have versioned doc too...
 // TODO : document that mergeSinks in this version can have null as parentSinks
 // TODO : in the log analysis, be careful that path is duplicated (which is good) but messages also are
@@ -181,8 +164,6 @@ cf. https://css-tricks.com/react-router-4/ and investigate if our router can do 
 - Preventing transition
 
 # Build/devop
-- study parcel
-- change @rxcc/testing to testutils
 - change assertContract to use auto print arguments with %O, so I don't have to use format
 - remove format and use console.log ?? will be complicated with assertCotnract in its current form
 - also in FSM and else use console.context for logging
@@ -262,51 +243,3 @@ have nice tracing/debugging, and then test with instrumenting the gui (a la flak
 > We are no longer building programs—end-to-end logic to calculate something for a single operator—as much as we are building systems.
 > In order to deliver systems that users—and businesses—can depend on, they have to be responsive, for it does not matter if something provides the correct response if the response is not available when it is needed. In order to achieve this, we need to make sure that responsiveness can be maintained under failure (resilience) and under load (elasticity). To make that happen, we make these systems message-driven, and we call them reactive systems.
 
-
-function postOrderTraverseTree(tree){
-  const isVisitedMap = new Map();
-  const lenses = {
-    // For post-order, add the parent at the end of the children
-    getChildren : tree => {
-      return isVisitedMap.get(tree) ? [] : tree.children ? tree.children.concat(tree) : []
-    },
-    getLabel : tree => tree.label,
-    isLeaf : tree => Boolean(!tree.children || tree.children.length === 0)
-  };
-  const traversalSpecs = {
-    store : {
-      empty : [],
-      takeAndRemoveOne : store => store.shift(),
-      isEmpty : store => Boolean(store.length === 0),
-      // NOTE : vs. bfs, only `add` changes
-      add : (subTrees, store) => store.unshift(...subTrees)
-    },
-    lenses : lenses,
-    visit : {
-      seed : [],
-      reduce : (result, tree) => {
-        // Cases :
-        // 1. label has been visited already
-        // 2. label has not been visited, and there are children
-        // 3. label has not been visited, and there are no children
-        if (isVisitedMap.get(tree)) {
-          console.log(`bfs : ${tree.label}`)
-          result.push(lenses.getLabel(tree))
-        }
-        else {
-          isVisitedMap.set(tree, true);
-          if (lenses.isLeaf(tree)){
-            result.push(lenses.getLabel(tree))
-          }
-          else {
-            //
-          }
-        }
-
-        return result
-      }
-    }
-  };
-
-  return visitTree(traversalSpecs, tree)
-}

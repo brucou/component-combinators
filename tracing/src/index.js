@@ -175,8 +175,6 @@ const adviseApp = (traceDef, App) => decorateWithAdvice({
     const { args } = joinpoint;
     const [sources, settings] = args;
 
-    // TODO : check which of two possibilities work (diff. is settings inheritance)
-    // In one case, the App might redefine trace info (component name etc), in another case not so check which
     const tracedApp = Combine({}, [
       TraceIframe,
       Combine(traceDef, [App])

@@ -12,7 +12,6 @@ function isSourcesAndSettings(obj) {
 
 export function InjectSourcesAndSettings({ sourceFactory: sourcesFactory, settings },
                                          componentTree) {
-  // TODO : update documentation
   assertContract(isSourcesAndSettings, [{
     sourceFactory: sourcesFactory,
     settings

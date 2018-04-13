@@ -57,7 +57,9 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
 
     // Process behaviour source commands (JSON Patch)
     const behaviourSink = reducedSinks[behaviourSourceName];
-    behaviourSink.subscribe(
+    // NOTE : protecting against edge case where there is no behaviour sink computed - that could happen, though it
+    // would mean that the behaviour never gets updated.
+    behaviourSink && behaviourSink.subscribe(
       patchCommands => {
         // NOTE : IN-PLACE update!!
         assertContract(isArrayUpdateOperations, [patchCommands], `InjectCircularSources > computeSinks > behaviourSink : must emit an array of json patch commands!`);
@@ -77,7 +79,9 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
     );
 
     const eventSink = reducedSinks[eventSourceName];
-    eventSink.subscribe(
+    // NOTE : protecting against edge case where there is no event sink computed - that could happen, it just means
+    // the component never emits commands to be executed
+    eventSink && eventSink.subscribe(
       command => {
         // NOTE : there are three possibilities for error :
         // 1. processingFn throws : that is handled by processingFnErrorHandler which processes it as in 2.

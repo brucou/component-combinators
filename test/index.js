@@ -18,4 +18,4 @@ window.$ = window.jQuery = require('jquery');
 // import './trace.switch.specs' // BIG file
 // import './trace.router.specs'
 // import './trace.inject.cycle.specs'
-import './tree.specs'
+import './TreeComponent.specs'

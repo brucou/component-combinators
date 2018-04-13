@@ -30,7 +30,7 @@ import { addPrefix, convertVNodesToHTML, DOM_SINK, makeErrorMessage } from "../u
 import * as QUnit from "qunitjs"
 import { resetGraphCounter, traceApp } from "../tracing/src"
 import { runTestScenario } from "../testing/src/runTestScenario"
-import { InjectCircularSources } from "../src/components/Inject/InjectLocalState"
+import { InjectCircularSources } from "../src/components/Inject/InjectCircularSources"
 import { set, pipe, omit } from 'ramda'
 import Rx from 'rx'
 import { markAsBehavior, markAsEvent } from "../src"
