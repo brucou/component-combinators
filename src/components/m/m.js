@@ -49,7 +49,7 @@ import {
   isMergeSinkFn, isOptSinks, isVNode
 } from "../../../contracts/src/index"
 import {
-  addIndex, always, clone, concat, defaultTo, flatten, keys, map, merge, mergeDeepRight, path, pathOr, reduce, T
+  addIndex, always, clone, concat, flatten, keys, map, merge, mergeDeepRight, path, pathOr, reduce, T, findIndex, uniq
 } from "ramda"
 import { div } from "cycle-snabbdom"
 import Rx from "rx"
@@ -68,6 +68,58 @@ const defaultMergeSinkConfig = {
 
 //////
 // Helpers
+/**
+ *
+ * @param slotHole
+ * @param childrenSlotContent
+ * @modifies slotHole
+ */
+function insertChildrenContentIntoParent(slotHole, childrenSlotContent){
+  const {sel, text} = slotHole;
+  if (sel && text){
+    // That is the weird snabbdom edge case
+    // We can't have {sel:'div', text:'sth', children ; [non empty]} -- the children are ignored
+    // So if we have that happening, we need to create a text vNode and put that as the first children
+    slotHole.children = [makeTextVNode(text)].concat(childrenSlotContent);
+    slotHole.text = undefined;
+  }
+  else {
+    slotHole.children = childrenSlotContent
+  }
+}
+
+/**
+ * Add (append) DOM content to existing parent content
+ * @param parentVNode
+ * @param childrenSlotContent
+ * @modifies parentVNode
+ */
+function appendChildrenContentIntoParent(parentVNode, childrenSlotContent) {
+  const {text} = parentVNode;
+  if (text) {
+    // NOTE : if parentVNode has text, then children = [], so splice is too defensive here
+    parentVNode.children.splice(0, 0, makeTextVNode(text))
+    parentVNode.text = undefined
+  }
+  Array.prototype.push.apply(parentVNode.children, childrenSlotContent)
+}
+
+/**
+ * Makes a vNode which only contains text
+ * @param text
+ * @returns {{children: Array, data: {}, elm: undefined, key: undefined, sel: undefined, text: *}}
+ */
+function makeTextVNode(text){
+  return {
+    "children" : [],
+    "data": {},
+    "elm": undefined,
+    "key": undefined,
+    "sel": undefined,
+    "text": text
+  }
+}
+
 function isSlotHole(vnode) {
   return vnode && vnode.data && 'slot' in vnode.data && true
 }
@@ -93,6 +145,11 @@ function visitFn(vnode) {
     : null
 }
 
+function removeFirstDup(topSlot, slotHoles){
+  const indexSecondDup = findIndex(x => path(['data', 'slot'], x) === topSlot, slotHoles);
+  return slotHoles.filter((val, index) => index != indexSecondDup)
+}
+
 /**
  *
  * @param vNode
@@ -103,19 +160,38 @@ function visitFn(vnode) {
 function getSlotHoles(vNode) {
   if (!vNode) throw `getSlotHoles : internal error, vNode cannot be falsy!`
 
-  const slotHoles = removeNullsFromArray(
+  const vNodeTraversal = traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, getChildrenFn, visitFn }, vNode);
+
+  const topSlot = vNodeTraversal[0] && vNodeTraversal[0].data && 'slot' in vNodeTraversal[0].data && vNodeTraversal[0].data.slot;
+  const hasTopSlot = !!topSlot;
+
+  const _slotHoles = removeNullsFromArray(
     traverseTree({ StoreConstructor, pushFn, popFn, isEmptyStoreFn, getChildrenFn, visitFn }, vNode)
   );
 
-  const slotNames = slotHoles.map(path(['data', 'slot']));
+  const slotNames = _slotHoles.map(path(['data', 'slot']));
 
   // Edge case : at least one slot name has more than one corresponding slot hole
-  // NOTE : I could perfectly allow such duplication - children content with the duplicated
-  // slot would be copied once in several locations, that could be a feature too, but not for now
-  assertContract(hasNoTwoSlotsSameName, [slotHoles, slotNames],
+  // 14 April 2018 : added one nuance to that edge case
+  // If top(vNode) has a slot, then it can have a second slot with the same name
+  // that second slot will receive vNodes. The first slot will be used for distribution
+  // of vNode content upstream : `to parent ---< 1st slot --- 2nd slot ---< content from children`
+  // Remember that for distribution we only look for slots at the root of the vNode
+  // Motivation : allows for slot distribution of content for tree data structures (in general recursive data
+  // structures). For a tree ds, a node is both a source of content, and a target for content.
+  assertContract(hasNoTwoSlotsSameName, [_slotHoles, slotNames, hasTopSlot, topSlot],
     `m > getSlotHoles : at least one slot name has more than one corresponding slot hole! For information : array of slot names should show duplicated - ${slotNames}`);
 
-  // Main case : no given slot name has more than one corresponding slot hole
+  // Once here, I know that if there are dups, it is indeed the top slot, and there are only two such slot declaration
+  // In which case, of the two we keep only the second as an insertion location
+  const hasDups = slotNames.length > 0 && uniq(slotNames).length !== slotNames.length;
+  const slotHoles = hasDups
+  ? removeFirstDup(topSlot, _slotHoles)
+    : _slotHoles;
+
+  debugger
+  // Main case : no given slot name has more than one corresponding slot hole, or 14 April 2018 : if that is the
+  // case, that slot is at the vNode root
   return slotHoles
 }
 
@@ -202,9 +278,11 @@ function mergeChildrenIntoParentDOM(parentDOMSink) {
          // we put the extra `div` only when there are several vNodes
          // that did not work though... `insertBefore : error...`
          // KEPT AS ADR i.e. documenting past choices
+         // TODO : try div({data : {unwrap : true}}, _arrayVNode)
+         // then below (default) div(unwrap(_arrayVNode))
+         */
          case 1 :
          return _arrayVNode[0]
-         */
         default :
           return div(_arrayVNode)
       }
@@ -227,7 +305,7 @@ function mergeChildrenIntoParentDOM(parentDOMSink) {
           const slotName = slotHole.data.slot;
           const childrenSlotContent = slotChildrenHashmap[slotName];
           if (childrenSlotContent) {
-            slotHole.children = childrenSlotContent
+            insertChildrenContentIntoParent(slotHole, childrenSlotContent)
           }
         });
       }
@@ -236,7 +314,8 @@ function mergeChildrenIntoParentDOM(parentDOMSink) {
         return slotHole.data.slot === undefined
       });
       const childrenVNodesWithNoSlots = slotChildrenHashmap && slotChildrenHashmap[undefined];
-
+// TODO: apparently edge case when parent node is a div (any tag) with a text node, vNodeToHtml does not work??
+      // TODO : make utility function to manipulate vNode!! this code is more and more unreadable!
       // ALG : if the parent node did not define a default slot for children content, then put
       // that content by default at the end of the parent VNodes
       if (!parentHasUndefinedSlot) {
@@ -252,19 +331,7 @@ function mergeChildrenIntoParentDOM(parentDOMSink) {
         // childrenVNode could be null if all children sinks are empty
         // observables, in which case we just return the parentVNode
         if (childrenVNodesWithNoSlots) {
-          if (parentVNode.text) {
-            // NOTE : if parentVNode has text, then children = [], so splice is too defensive here
-            parentVNode.children.splice(0, 0, {
-              children: [],
-              "data": {},
-              "elm": undefined,
-              "key": undefined,
-              "sel": undefined,
-              "text": parentVNode.text
-            })
-            parentVNode.text = undefined
-          }
-          Array.prototype.push.apply(parentVNode.children, childrenVNodesWithNoSlots)
+          appendChildrenContentIntoParent(parentVNode, childrenVNodesWithNoSlots)
         }
       }
 

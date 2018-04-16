@@ -78,6 +78,35 @@ export const hasMsignature = checkAndGatherErrors([
   [hasValidChildrenProperty, `m > hasMsignature > hasValidChildrenProperty : children components must be an array of components!`]
 ], `hasMsignature : fails!`);
 
-export function hasNoTwoSlotsSameName(slotHoles, slotNames) {
-  return uniq(slotNames).length === slotHoles.length
+export function hasNoTwoSlotsSameName(slotHoles, slotNames, hasTopSlot, topSlot) {
+  const uniqueSlotNames = uniq(slotNames);
+  const hasDups = slotNames.length > 0 && slotNames.length !== uniqueSlotNames.length;
+
+  if (hasDups) {
+    const indexFirstDupTopSlot = slotNames.indexOf(topSlot, 0);
+    const indexSecondDupTopSlot = slotNames.indexOf(topSlot, indexFirstDupTopSlot + 1);
+    const isTopSlotDup = indexFirstDupTopSlot != -1 && indexSecondDupTopSlot != -1;
+
+    if (isTopSlotDup){
+      // Allowed if only repeated once
+      const indexThirdDupTopSlot = slotNames.indexOf(topSlot, indexSecondDupTopSlot + 1);
+
+      if (indexThirdDupTopSlot != -1) {
+        // Not allowed
+        return `hasNoTwoSlotsSameName : found duplicated slot in vNode. That slot is found to be the one at the root of the vNode. That is allowed only if the slot is duplicated. It seems the slot is triplicated or more! Please check the vNode content`
+      }
+      else {
+        // Allowed, as said before
+        return true
+      }
+    }
+    else {
+      // Not allowed
+      return `hasNoTwoSlotsSameName : found duplicated slot in vNode. The only way this is allowed is for that slot to be the one at the root of the vNode. That is not the case!`
+    }
+  }
+  else {
+    // Allowed
+    return true
+  }
 }

@@ -2,9 +2,9 @@ import * as QUnit from "qunitjs"
 import * as Rx from 'rx'
 import { convertVNodesToHTML, DOM_SINK } from "../utils/src"
 import { runTestScenario } from "../testing/src/runTestScenario"
-import { div, strong } from "cycle-snabbdom"
+import { a, div, li, ol, ul, span } from "cycle-snabbdom"
 import { Tree } from "../src/components/UI"
-import {pipe} from 'ramda'
+import { pipe } from 'ramda'
 
 const $ = Rx.Observable;
 
@@ -18,52 +18,81 @@ const $ = Rx.Observable;
 // M1. Tree depth 2
 // M2. Tree sequence : Tree depth 2, then Tree depth 1, then Tree depth 2 again
 
+const NODE_SLOT = 'node_slot';
 const TREE_SOURCE_NAME = 'TREE_SOURCE_NAME';
 const LOCAL_STATE_SOURCE_NAME = 'LOCAL_STATE_SOURCE_NAME';
 const TREE_SETTING_NAME = 'TREE_SETTING_NAME';
 const COMMAND_SOURCE_NAME = 'COMMAND_SOURCE_NAME';
 const A_SINK = 'A_SINK';
 const treeDepth2 = {
-    label: "root",
-    children: [
-      { label: "left" },
-      {
-        label: "middle",
-        children: [{ label: "midleft" }, { label: "midright" }]
-      },
-      { label: "right" }
-    ]
+  label: "root",
+  children: [
+    { label: "left" },
+    {
+      label: "middle",
+      children: [{ label: "midleft" }, { label: "midright" }]
+    },
+    { label: "right" }
+  ]
 };
 
-function TreeEmpty(sources, settings){
+function TreeEmpty(sources, settings) {
   return {
-    [DOM_SINK] : $.of(div('TreeEmpty'))
+    [DOM_SINK]: $.of(div('TreeEmpty'))
   }
 }
 
-function TreeRoot(sources, settings){
+function TreeRoot(sources, settings) {
   return {
-    [DOM_SINK] : $.of(div('TreeRoot'))
+    [DOM_SINK]: $.of(div('.tree.left.inspire-tree', {},[
+      ol({slot : NODE_SLOT}, [])
+    ]))
   }
 }
 
-function TreeNode(sources, settings){
-  const {path, label} = settings;
+function TreeNode(sources, settings) {
+  const { path, label } = settings;
 
   return {
-    [DOM_SINK] : $.of(div(`TreeNode@${path} : ${label}`))
+    [DOM_SINK]: $.of(
+      li(".collapsed.selectable.draggable.drop-target.rendered.folder", {slot: NODE_SLOT}, [
+        div(".title-wrap", [
+          a(".toggle.icon.icon-expand"),
+          a(".title.icon.icon-folder", {
+            "attrs": {
+              "tabindex": "1",
+              "unselectable": "on",
+            }
+          }, [`TreeNode@${path} : ${label}`])
+        ]),
+        div(".wholerow"),
+        ol({slot: NODE_SLOT}, [])
+      ])
+    )
+  }
+}
+// TODO : solve possible problems of which slot is origin, which destination...
+function TreeLeaf(sources, settings) {
+  const { path, label } = settings;
+
+  return {
+    [DOM_SINK]: $.of(
+      li(".collapsed.selectable.draggable.drop-target.leaf", {slot: NODE_SLOT}, [
+        div(".title-wrap", [
+          a(".title.icon.icon-file-empty", {
+            "attrs": {
+              "tabindex": "1",
+              "unselectable": "on",
+            }
+          }, [`TreeLeaf@${path} : ${label}`])
+        ]),
+        div(".wholerow")
+      ])
+    )
   }
 }
 
-function TreeLeaf(sources, settings){
-  const {path, label} = settings;
-
-  return {
-    [DOM_SINK] : $.of(div(`TreeLeaf@${path} : ${label}`))
-  }
-}
-
-function commandExecFn(command){
+function commandExecFn(command) {
   return $.of('response computed')
 }
 
@@ -79,18 +108,18 @@ QUnit.module("Testing Tree component", {})
 QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
   const done = assert.async(2);
   const _treeSettings = {
-    treeSettings : {
-      treeSource : TREE_SOURCE_NAME,
-      localStateSource : LOCAL_STATE_SOURCE_NAME,
-      localTreeSetting : TREE_SETTING_NAME,
-      defaultUIstateNode : {isExpanded : true},
-      localCommandSpecs : {source : COMMAND_SOURCE_NAME, executeFn : commandExecFn},
-      lenses : {getChildren : tree => tree.children || [], getLabel : tree => tree.label || ''},
-      sinkNames : [A_SINK, DOM_SINK]
+    treeSettings: {
+      treeSource: TREE_SOURCE_NAME,
+      localStateSource: LOCAL_STATE_SOURCE_NAME,
+      localTreeSetting: TREE_SETTING_NAME,
+      defaultUIstateNode: { isExpanded: true },
+      localCommandSpecs: { source: COMMAND_SOURCE_NAME, executeFn: commandExecFn },
+      lenses: { getChildren: tree => tree.children || [], getLabel: tree => tree.label || '' },
+      sinkNames: [A_SINK, DOM_SINK]
     }
   };
 
-  const arrayComponents = [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] ;
+  const arrayComponents = [TreeEmpty, TreeRoot, TreeNode, TreeLeaf];
 
   const treeComponent = Tree(_treeSettings, arrayComponents);
 
@@ -98,7 +127,7 @@ QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
     {
       [TREE_SOURCE_NAME]: {
         diagram: '-a',
-        values: { a: treeDepth2}
+        values: { a: treeDepth2 }
       }
     },
   ];
