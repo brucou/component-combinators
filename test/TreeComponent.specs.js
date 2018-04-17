@@ -36,6 +36,10 @@ const treeDepth2 = {
   ]
 };
 
+function cleanString(str) {
+  return str.trim().replace(/\s\s+|\n|\r/g, ' ').replace(/> </g, '><')
+}
+
 function TreeEmpty(sources, settings) {
   return {
     [DOM_SINK]: $.of(div('TreeEmpty'))
@@ -132,10 +136,54 @@ QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
     },
   ];
 
+  const treeNodes = `
+  <div class="tree left inspire-tree">
+    <ol>
+        <li class="collapsed selectable draggable drop-target rendered folder">
+            <div class="title-wrap"><a class="toggle icon icon-expand"></a><a
+                    class="title icon icon-folder" tabindex="1" unselectable="on">TreeNode@0 :
+                root</a></div>
+            <div class="wholerow"></div>
+            <ol>
+                <li class="collapsed selectable draggable drop-target leaf">
+                    <div class="title-wrap"><a class="title icon icon-file-empty" tabindex="1"
+                                               unselectable="on">TreeLeaf@0,0 : left</a></div>
+                    <div class="wholerow"></div>
+                </li>
+                <li class="collapsed selectable draggable drop-target rendered folder">
+                    <div class="title-wrap"><a class="toggle icon icon-expand"></a><a
+                            class="title icon icon-folder" tabindex="1" unselectable="on">TreeNode@0,1
+                        : middle</a></div>
+                    <div class="wholerow"></div>
+                    <ol>
+                        <li class="collapsed selectable draggable drop-target leaf">
+                            <div class="title-wrap"><a class="title icon icon-file-empty"
+                                                       tabindex="1" unselectable="on">TreeLeaf@0,1,0
+                                : midleft</a></div>
+                            <div class="wholerow"></div>
+                        </li>
+                        <li class="collapsed selectable draggable drop-target leaf">
+                            <div class="title-wrap"><a class="title icon icon-file-empty"
+                                                       tabindex="1" unselectable="on">TreeLeaf@0,1,1
+                                : midright</a></div>
+                            <div class="wholerow"></div>
+                        </li>
+                    </ol>
+                </li>
+                <li class="collapsed selectable draggable drop-target leaf">
+                    <div class="title-wrap"><a class="title icon icon-file-empty" tabindex="1"
+                                               unselectable="on">TreeLeaf@0,2 : right</a></div>
+                    <div class="wholerow"></div>
+                </li>
+            </ol>
+        </li>
+    </ol>
+</div>
+  `
   /** @type TestResults */
   const expected = {
     DOM: {
-      outputs: [],
+      outputs: [cleanString(treeNodes)],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
       transform: pipe(convertVNodesToHTML)
@@ -156,4 +204,7 @@ QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
     }
   })
 
+  // const div = document.createElement('div');
+  // div.innerHTML = treeNodes.trim();
+  // document.body.appendChild(div);
 });
