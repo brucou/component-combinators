@@ -24,6 +24,16 @@ const LOCAL_STATE_SOURCE_NAME = 'LOCAL_STATE_SOURCE_NAME';
 const TREE_SETTING_NAME = 'TREE_SETTING_NAME';
 const COMMAND_SOURCE_NAME = 'COMMAND_SOURCE_NAME';
 const A_SINK = 'A_SINK';
+const treeDepth1 = {
+  label: "root",
+  children: [
+    { label: "gauche" },
+    {
+      label: "milieu",
+    },
+    { label: "droite" }
+  ]
+};
 const treeDepth2 = {
   label: "root",
   children: [
@@ -75,7 +85,7 @@ function TreeNode(sources, settings) {
     )
   }
 }
-// TODO : solve possible problems of which slot is origin, which destination...
+
 function TreeLeaf(sources, settings) {
   const { path, label } = settings;
 
@@ -208,3 +218,106 @@ QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
   // div.innerHTML = treeNodes.trim();
   // document.body.appendChild(div);
 });
+
+QUnit.skip("Main cases - tree depth 2, depth 1 and deph2", function exec_test(assert) {
+  const done = assert.async(2);
+  const _treeSettings = {
+    treeSettings: {
+      treeSource: TREE_SOURCE_NAME,
+      localStateSource: LOCAL_STATE_SOURCE_NAME,
+      localTreeSetting: TREE_SETTING_NAME,
+      defaultUIstateNode: { isExpanded: true },
+      localCommandSpecs: { source: COMMAND_SOURCE_NAME, executeFn: commandExecFn },
+      lenses: { getChildren: tree => tree.children || [], getLabel: tree => tree.label || '' },
+      sinkNames: [A_SINK, DOM_SINK]
+    }
+  };
+
+  const arrayComponents = [TreeEmpty, TreeRoot, TreeNode, TreeLeaf];
+
+  const treeComponent = Tree(_treeSettings, arrayComponents);
+
+  const inputs = [
+    {
+      [TREE_SOURCE_NAME]: {
+        diagram: '-aba',
+        values: { a: treeDepth2, b: treeDepth1 }
+      }
+    },
+  ];
+
+  const treeNodes = `
+  <div class="tree left inspire-tree">
+    <ol>
+        <li class="collapsed selectable draggable drop-target rendered folder">
+            <div class="title-wrap"><a class="toggle icon icon-expand"></a><a
+                    class="title icon icon-folder" tabindex="1" unselectable="on">TreeNode@0 :
+                root</a></div>
+            <div class="wholerow"></div>
+            <ol>
+                <li class="collapsed selectable draggable drop-target leaf">
+                    <div class="title-wrap"><a class="title icon icon-file-empty" tabindex="1"
+                                               unselectable="on">TreeLeaf@0,0 : left</a></div>
+                    <div class="wholerow"></div>
+                </li>
+                <li class="collapsed selectable draggable drop-target rendered folder">
+                    <div class="title-wrap"><a class="toggle icon icon-expand"></a><a
+                            class="title icon icon-folder" tabindex="1" unselectable="on">TreeNode@0,1
+                        : middle</a></div>
+                    <div class="wholerow"></div>
+                    <ol>
+                        <li class="collapsed selectable draggable drop-target leaf">
+                            <div class="title-wrap"><a class="title icon icon-file-empty"
+                                                       tabindex="1" unselectable="on">TreeLeaf@0,1,0
+                                : midleft</a></div>
+                            <div class="wholerow"></div>
+                        </li>
+                        <li class="collapsed selectable draggable drop-target leaf">
+                            <div class="title-wrap"><a class="title icon icon-file-empty"
+                                                       tabindex="1" unselectable="on">TreeLeaf@0,1,1
+                                : midright</a></div>
+                            <div class="wholerow"></div>
+                        </li>
+                    </ol>
+                </li>
+                <li class="collapsed selectable draggable drop-target leaf">
+                    <div class="title-wrap"><a class="title icon icon-file-empty" tabindex="1"
+                                               unselectable="on">TreeLeaf@0,2 : right</a></div>
+                    <div class="wholerow"></div>
+                </li>
+            </ol>
+        </li>
+    </ol>
+</div>
+  `
+  /** @type TestResults */
+  const expected = {
+    DOM: {
+      outputs: [cleanString(treeNodes)],
+      successMessage: 'sink DOM produces the expected values',
+      // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
+      transform: pipe(convertVNodesToHTML)
+    },
+    [A_SINK]: {
+      outputs: [],
+      successMessage: 'sink produces the expected values',
+      // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
+    },
+  }
+
+  runTestScenario(inputs, expected, treeComponent, {
+    tickDuration: 3,
+    waitForFinishDelay: 10,
+    analyzeTestResults: analyzeTestResults(assert, done),
+    errorHandler: function (err) {
+      done(err)
+    }
+  })
+
+  // const div = document.createElement('div');
+  // div.innerHTML = treeNodes.trim();
+  // document.body.appendChild(div);
+});
+
+// TODO : run examples and see that they still work
+// TODO : 2 main case test, cf test plan
