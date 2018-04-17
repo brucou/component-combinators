@@ -209,7 +209,9 @@ QUnit.test("main cases - Switch - component tree depth 2 - 0 match, 3 cases", fu
   /** @type TestResults */
   const expectedMessages = {
     DOM: {
-      outputs: ["<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div></div></div></div>"],
+      outputs: [
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div></div></div>"
+      ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
       transform: pipe(convertVNodesToHTML)
@@ -447,7 +449,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 0 match, 3 cases", fu
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div></div></div>"
+          "value": "<div></div>"
         },
         "type": 1
       },
@@ -2366,18 +2368,18 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
   const expectedMessages = {
     DOM: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 3 : c</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 3 : f</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 3 : a</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 3 : c</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 1 : c</span><span>Component 2 : d</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 3 : f</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 3 : a</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 1 : f</span><span>Component 2 : b</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 1 : f</span><span>Component 2 : c</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 1 : a</span><span>Component 2 : c</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 1 : a</span><span>Component 2 : d</span></div>"
       ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
@@ -3801,7 +3803,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div></div></div>"
+            "value": "<div></div>"
           },
           "type": 1
         },
@@ -4677,7 +4679,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><span>Component 3 : c</span></div>"
+            "value": "<span>Component 3 : c</span>"
           },
           "type": 1
         },
@@ -4696,7 +4698,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><span>Component 3 : c</span></div>"
+            "value": "<span>Component 3 : c</span>"
           },
           "type": 1
         },
@@ -4715,7 +4717,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 3 : c</span></div></div>"
+            "value": "<span>Component 3 : c</span>"
           },
           "type": 1
         },
@@ -4733,7 +4735,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 3 : c</span></div></div></div>"
+            "value": "<span>Component 3 : c</span>"
           },
           "type": 1
         },
@@ -4944,7 +4946,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div></div></div>"
+            "value": "<div></div>"
           },
           "type": 1
         },
@@ -6672,7 +6674,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>"
+            "value": "<div><span>Component 1 : c</span><span>Component 2 : d</span></div>"
           },
           "type": 1
         },
@@ -6690,7 +6692,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div></div>"
+            "value": "<div><span>Component 1 : c</span><span>Component 2 : d</span></div>"
           },
           "type": 1
         },
@@ -8994,7 +8996,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div></div></div>"
+            "value": "<div></div>"
           },
           "type": 1
         },
@@ -9732,7 +9734,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><span>Component 3 : f</span></div>"
+            "value": "<span>Component 3 : f</span>"
           },
           "type": 1
         },
@@ -9751,7 +9753,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><span>Component 3 : f</span></div>"
+            "value": "<span>Component 3 : f</span>"
           },
           "type": 1
         },
@@ -10192,7 +10194,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 3 : f</span></div></div>"
+            "value": "<span>Component 3 : f</span>"
           },
           "type": 1
         },
@@ -10210,7 +10212,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 3 : f</span></div></div></div>"
+            "value": "<span>Component 3 : f</span>"
           },
           "type": 1
         },
@@ -11733,7 +11735,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><span>Component 3 : a</span></div>"
+            "value": "<span>Component 3 : a</span>"
           },
           "type": 1
         },
@@ -11752,7 +11754,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><span>Component 3 : a</span></div>"
+            "value": "<span>Component 3 : a</span>"
           },
           "type": 1
         },
@@ -11771,7 +11773,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 3 : a</span></div></div>"
+            "value": "<span>Component 3 : a</span>"
           },
           "type": 1
         },
@@ -11789,7 +11791,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 3 : a</span></div></div></div>"
+            "value": "<span>Component 3 : a</span>"
           },
           "type": 1
         },
@@ -12000,7 +12002,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div></div></div>"
+            "value": "<div></div>"
           },
           "type": 1
         },
@@ -14183,7 +14185,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>"
+            "value": "<div><span>Component 1 : f</span><span>Component 2 : b</span></div>"
           },
           "type": 1
         },
@@ -14201,7 +14203,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div></div>"
+            "value": "<div><span>Component 1 : f</span><span>Component 2 : b</span></div>"
           },
           "type": 1
         },
@@ -14552,7 +14554,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div>"
+            "value": "<div><span>Component 1 : f</span><span>Component 2 : c</span></div>"
           },
           "type": 1
         },
@@ -14570,7 +14572,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div></div>"
+            "value": "<div><span>Component 1 : f</span><span>Component 2 : c</span></div>"
           },
           "type": 1
         },
@@ -15282,7 +15284,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>"
+            "value": "<div><span>Component 1 : a</span><span>Component 2 : c</span></div>"
           },
           "type": 1
         },
@@ -15300,7 +15302,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div></div>"
+            "value": "<div><span>Component 1 : a</span><span>Component 2 : c</span></div>"
           },
           "type": 1
         },
@@ -15355,7 +15357,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div>"
+            "value": "<div><span>Component 1 : a</span><span>Component 2 : d</span></div>"
           },
           "type": 1
         },
@@ -15373,7 +15375,7 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
           "identifier": "DOM",
           "notification": {
             "kind": "N",
-            "value": "<div><div><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div></div>"
+            "value": "<div><span>Component 1 : a</span><span>Component 2 : d</span></div>"
           },
           "type": 1
         },
@@ -15405,20 +15407,3 @@ QUnit.test("main cases - Switch - component tree depth 2 - 1 match, 3 cases", fu
       done()
     });
 });
-
-// TODO : inject sources, try to use default function for unknown sources
-// use defaultTraceSpecs : [source, sink] for this one, so I test it
-// then think about how to declare behaviour and event in a more friendly way
-
-// TODO : change computeSinks signature to directly pass componentTree, then adjust examples... and doc... so have
-// versioned doc too...
-// TODO : ListOf remove listActionsFromChildrenSinks : signature has changd, and anyways it is obslete deprecated
-// TODO : document that mergeSinks in this version can have null as parentSinks
-// TODO : in the log analysis, be careful that path is duplicated (which is good) but messages also are
-// so Foreach content -> Foreach|Inner same content but new id
-// TODO : in the draw of graph, I can desambiguate in and out trace with the path
-// ForEach graph structure several times will ahve the same lines..
-// we know about recreation of branchs of the tree when a graph structure appears after a runtime portion, path
-// gives the location of the branch
-// TODO : also test for error occuring in the component tree
-// component do not complete per se, so hard to test

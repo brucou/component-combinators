@@ -186,7 +186,7 @@ QUnit.test("main case - OnRoute - non-nested routing - transitions - initial sta
   const expectedMessages = {
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>"
+        "<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"
       ],
       successMessage: `sink ${DOM_SINK} produces only null : transition match -> non-match immediately produces null on DOM sink as first value AND initial state counts as match (starting the router)`,
       transform: pipe(convertVNodesToHTML),
@@ -237,7 +237,6 @@ QUnit.test("main case - OnRoute - non-nested routing - transitions - initial sta
     },
   ];
   const expectedTraces1 = [
-
     {
       "combinatorName": "Combine",
       "componentName": "ROOT",
@@ -437,8 +436,8 @@ QUnit.test("main case - OnRoute - non-nested routing - transitions no match -> m
   const expectedMessages = {
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div></div></div></div>"
+        "<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div>"
       ],
       successMessage: `sink ${DOM_SINK} : transition any -> match produces a null value as the first value of the DOM sink, then the regular DOM sinks as computed from the component`,
       transform: pipe(convertVNodesToHTML),
@@ -602,8 +601,7 @@ QUnit.test("main case - OnRoute - non-nested routing - transitions no match -> m
           "ROUTE_LOG"
         ]
       }
-    },
-  ];
+    },];
   const expectedTraces2 = [
     {
       "combinatorName": "OnRoute",
@@ -1281,7 +1279,7 @@ QUnit.test("main case - OnRoute - non-nested routing - transitions no match -> m
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div></div>"
+          "value": "<div><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div>"
         },
         "type": 1
       },
@@ -1299,7 +1297,7 @@ QUnit.test("main case - OnRoute - non-nested routing - transitions no match -> m
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div></div></div>"
+          "value": "<div><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div>"
         },
         "type": 1
       },

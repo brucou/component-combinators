@@ -107,9 +107,7 @@ function wrapInTraceIframe(arrHtml) {
   return arrHtml.map(html => ([
     `<div>`,
     `<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>`,
-    `<div>`,
     html,
-    `</div>`,
     `</div>`
   ].join('')))
 }
@@ -9580,7 +9578,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - no items", function ex
   const expectedMessages = {
       DOM: {
         outputs: [
-          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div></div></div></div></div>"
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div></div></div>"
         ],
         successMessage: 'sink DOM produces the expected values',
         transform: pipe(convertVNodesToHTML)
@@ -9666,7 +9664,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - no items", function ex
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div></div></div>"
+          "value": "<div></div>"
         },
         "type": 1
       },
@@ -9721,7 +9719,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - no items", function ex
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div></div></div>"
+          "value": "<div></div>"
         },
         "type": 1
       },
@@ -9739,7 +9737,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - no items", function ex
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div></div></div></div>"
+          "value": "<div></div>"
         },
         "type": 1
       },
@@ -9858,8 +9856,8 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
     DOM: {
       // NOTE : one can see here the `combineLatest` in action : a-a-a ; b-a-a; b-b-a; b-b-b
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><span>List Component 0 : ITEM1 - a</span></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><span>List Component 0 : ITEM1 - b</span></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>List Component 0 : ITEM1 - a</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>List Component 0 : ITEM1 - b</span></div>"
       ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
@@ -10327,7 +10325,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>List Component 0 : ITEM1 - a</span></div>"
+          "value": "<span>List Component 0 : ITEM1 - a</span>"
         },
         "type": 1
       },
@@ -10345,7 +10343,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>List Component 0 : ITEM1 - a</span></div>"
+          "value": "<span>List Component 0 : ITEM1 - a</span>"
         },
         "type": 1
       },
@@ -10363,7 +10361,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><span>List Component 0 : ITEM1 - a</span></div></div>"
+          "value": "<span>List Component 0 : ITEM1 - a</span>"
         },
         "type": 1
       },
@@ -10761,7 +10759,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>List Component 0 : ITEM1 - b</span></div>"
+          "value": "<span>List Component 0 : ITEM1 - b</span>"
         },
         "type": 1
       },
@@ -10779,7 +10777,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>List Component 0 : ITEM1 - b</span></div>"
+          "value": "<span>List Component 0 : ITEM1 - b</span>"
         },
         "type": 1
       },
@@ -10797,7 +10795,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 1 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><span>List Component 0 : ITEM1 - b</span></div></div>"
+          "value": "<span>List Component 0 : ITEM1 - b</span>"
         },
         "type": 1
       },
@@ -10881,9 +10879,9 @@ QUnit.test("main case - ListOf - component tree depth 1 - 2 items", function exe
     DOM: {
       // NOTE : one can see here the `combineLatest` in action : a-a-a ; b-a-a; b-b-a; b-b-b
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><span>List Component 0 : ITEM1 - a</span><span>List Component 1 : kk - a</span></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - a</span></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - b</span></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>List Component 0 : ITEM1 - a</span><span>List Component 1 : kk - a</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - a</span></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - b</span></div>"
       ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
@@ -11671,7 +11669,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 2 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><span>List Component 0 : ITEM1 - a</span><span>List Component 1 : kk - a</span></div></div>"
+          "value": "<div><span>List Component 0 : ITEM1 - a</span><span>List Component 1 : kk - a</span></div>"
         },
         "type": 1
       },
@@ -12343,7 +12341,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 2 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - a</span></div></div>"
+          "value": "<div><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - a</span></div>"
         },
         "type": 1
       },
@@ -12415,7 +12413,7 @@ QUnit.test("main case - ListOf - component tree depth 1 - 2 items", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - b</span></div></div>"
+          "value": "<div><span>List Component 0 : ITEM1 - b</span><span>List Component 1 : kk - b</span></div>"
         },
         "type": 1
       },
@@ -12882,7 +12880,7 @@ QUnit.test("main case - Pipe - sources not colliding with sinks, with throwIfSin
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>A-Intents : I-Events - click : a</span></div>"
+          "value": "<span>A-Intents : I-Events - click : a</span>"
         },
         "type": 1
       },
@@ -13325,7 +13323,7 @@ QUnit.test("main case - Pipe - sources not colliding with sinks, with throwIfSin
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>A-Intents : I-Events - click : b</span></div>"
+          "value": "<span>A-Intents : I-Events - click : b</span>"
         },
         "type": 1
       },
@@ -13768,7 +13766,7 @@ QUnit.test("main case - Pipe - sources not colliding with sinks, with throwIfSin
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>A-Intents : I-Events - click : c</span></div>"
+          "value": "<span>A-Intents : I-Events - click : c</span>"
         },
         "type": 1
       },
@@ -14197,7 +14195,7 @@ QUnit.test("main case - Pipe - sources not colliding with sinks, with throwIfSin
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><span>A-Intents : I-Events - click : d</span></div>"
+          "value": "<span>A-Intents : I-Events - click : d</span>"
         },
         "type": 1
       },
@@ -14653,10 +14651,10 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style="width: 450px; height: 200px"></iframe><div><div><div>DOM_SINK emits: a</div></div></div></div>`,
-        `<div><iframe id=\"${iframeId.slice(1)}\" src=\"${iframeSource}\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: A</div></div></div></div>`,
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: b</div></div></div></div>`,
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: B</div></div></div></div>`
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -14782,7 +14780,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -14800,7 +14798,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -14947,7 +14945,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -14965,7 +14963,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -15058,7 +15056,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -15076,7 +15074,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -15223,7 +15221,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -15241,7 +15239,7 @@ QUnit.test("main case - InSlot - component tree depth 1 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -15303,10 +15301,10 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
     },
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -15467,7 +15465,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -15486,7 +15484,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -15504,7 +15502,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: a</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -15693,7 +15691,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -15712,7 +15710,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -15730,7 +15728,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -15845,7 +15843,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -15864,7 +15862,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -15882,7 +15880,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -16071,7 +16069,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -16090,7 +16088,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -16108,7 +16106,7 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -16136,6 +16134,22 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
 });
 
 // TODO : also test for errors occuring in the component tree
-// component do not complete per se, so hard to test
+// component do not complete per se, so hard to test completion
 // TODO : test also Switch with container having slot!!!
 // TODO : edge case traceSinks... if sink is null
+
+// TODO : inject sources, try to use default function for unknown sources
+// use defaultTraceSpecs : [source, sink] for this one, so I test it
+// then think about how to declare behaviour and event in a more friendly way
+
+// TODO : change computeSinks signature to directly pass componentTree, then adjust examples... and doc... so have
+// versioned doc too...
+// TODO : document that mergeSinks in this version can have null as parentSinks
+// TODO : in the log analysis, be careful that path is duplicated (which is good) but messages also are
+// so Foreach content -> Foreach|Inner same content but new id
+// TODO : in the draw of graph, I can desambiguate in and out trace with the path
+// ForEach graph structure several times will ahve the same lines..
+// we know about recreation of branchs of the tree when a graph structure appears after a runtime portion, path
+// gives the location of the branch
+// TODO : also test for error occuring in the component tree
+// component do not complete per se, so hard to test

@@ -194,7 +194,9 @@ QUnit.test("main case - InjectCircularSources - behaviour, event, other", functi
     },
     // I have to keep it, because the iframe is always there...
     [DOM_SINK]: {
-      outputs: ["<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>"],
+      outputs: [
+        "<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"
+      ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -2089,7 +2091,10 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
     },
     // I have to keep it, because the iframe is always there...
     [DOM_SINK]: {
-      outputs: ["<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>"],
+      outputs:
+        [
+          "<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"
+        ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -3512,7 +3517,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
     },
     // I have to keep it, because the iframe is always there...
     [DOM_SINK]: {
-      outputs: ["<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>"],
+      outputs: ["<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -4864,7 +4869,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
     },
     // I have to keep it, because the iframe is always there...
     [DOM_SINK]: {
-      outputs: ["<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>"],
+      outputs: ["<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -6559,7 +6564,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
     },
     // I have to keep it, because the iframe is always there...
     [DOM_SINK]: {
-      outputs: ["<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe></div>"],
+      outputs: ["<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
