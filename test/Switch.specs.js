@@ -108,12 +108,12 @@ QUnit.test("main cases - 1 match - 3 cases - switch on source - with case contai
     DOM: {
       outputs: [
         "<div class=\"parent\"></div>",
-        "<div class=\"parent\"><div><span>Component 3 : c</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : c</span></div>",
         "<div class=\"parent\"></div>",
         "<div class=\"parent\"><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
         "<div class=\"parent\"></div>",
-        "<div class=\"parent\"><div><span>Component 3 : f</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : a</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : f</span></div>",
+        "<div class=\"parent\"><span>Component 3 : a</span></div>",
         "<div class=\"parent\"></div>",
         "<div class=\"parent\"><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
         "<div class=\"parent\"><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div>",
@@ -244,10 +244,10 @@ QUnit.test("main cases - 0-1 match - 3 cases - switch on source - with case cont
     DOM: {
       outputs: [
         "<div class=\"parent\"></div>",
-        "<div class=\"parent\"><div><span>Component 3 : c</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : c</span></div>",
         "<div class=\"parent\"></div>",
-        "<div class=\"parent\"><div><span>Component 3 : f</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : a</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : f</span></div>",
+        "<div class=\"parent\"><span>Component 3 : a</span></div>",
         "<div class=\"parent\"></div>"
       ],
       successMessage: 'sink DOM produces the expected values',
@@ -359,20 +359,20 @@ QUnit.test("main cases - 2 matches - 3 cases - switch on source - with case cont
   const expected = {
     DOM: {
       outputs: [
-        "<div class=\"parent\"></div>", // first `true` match activates the CaseContainer
-        "<div class=\"parent\"><div><span>Component 3 : d</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : d</span></div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : e</span></div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
+        "<div class=\"parent\"></div>",
+        "<div class=\"parent\"><span>Component 3 : d</span></div>",
+        "<div class=\"parent\"><span>Component 3 : d</span><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : e</span><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
         "<div class=\"parent\"><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
         "<div class=\"parent\"></div>",
-        "<div class=\"parent\"><div><span>Component 3 : b</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : b</span></div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : c</span></div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : c</span></div><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : c</span></div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : d</span></div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
-        "<div class=\"parent\"><div><span>Component 3 : d</span></div><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div>"
-      ],
+        "<div class=\"parent\"><span>Component 3 : b</span></div>",
+        "<div class=\"parent\"><span>Component 3 : b</span><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : c</span><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : c</span><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : c</span><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : d</span><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
+        "<div class=\"parent\"><span>Component 3 : d</span><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div>"
+      ] ,
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
       transform: pipe(convertVNodesToHTML)
@@ -498,18 +498,18 @@ QUnit.test("main cases - 2 matches - 3 cases - switch on source - without case c
     DOM: {
       outputs: [
         "<div></div>",
-        "<div><div><span>Component 3 : d</span></div></div>",
-        "<div><div><span>Component 3 : d</span></div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
-        "<div><div><span>Component 3 : e</span></div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
-        "<div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
+        "<span>Component 3 : d</span>",
+        "<div><span>Component 3 : d</span><span>Component 1 : c</span><span>Component 2 : d</span></div>",
+        "<div><span>Component 3 : e</span><span>Component 1 : c</span><span>Component 2 : d</span></div>",
+        "<div><span>Component 1 : c</span><span>Component 2 : d</span></div>",
         "<div></div>",
-        "<div><div><span>Component 3 : b</span></div></div>",
-        "<div><div><span>Component 3 : b</span></div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
-        "<div><div><span>Component 3 : c</span></div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
-        "<div><div><span>Component 3 : c</span></div><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div>",
-        "<div><div><span>Component 3 : c</span></div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
-        "<div><div><span>Component 3 : d</span></div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
-        "<div><div><span>Component 3 : d</span></div><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div>"
+        "<span>Component 3 : b</span>",
+        "<div><span>Component 3 : b</span><span>Component 1 : f</span><span>Component 2 : b</span></div>",
+        "<div><span>Component 3 : c</span><span>Component 1 : f</span><span>Component 2 : b</span></div>",
+        "<div><span>Component 3 : c</span><span>Component 1 : f</span><span>Component 2 : c</span></div>",
+        "<div><span>Component 3 : c</span><span>Component 1 : a</span><span>Component 2 : c</span></div>",
+        "<div><span>Component 3 : d</span><span>Component 1 : a</span><span>Component 2 : c</span></div>",
+        "<div><span>Component 3 : d</span><span>Component 1 : a</span><span>Component 2 : d</span></div>"
       ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
@@ -730,17 +730,17 @@ QUnit.test("main cases - 1 match - 3 cases - switch on condition", function exec
     DOM: {
       outputs: [
         "<div></div>",
-        "<div><div><span>Component 3 : c</span></div></div>",
+        "<span>Component 3 : c</span>",
         "<div></div>",
-        "<div><div><span>Component 1 : c</span><span>Component 2 : d</span></div></div>",
+        "<div><span>Component 1 : c</span><span>Component 2 : d</span></div>",
         "<div></div>",
-        "<div><div><span>Component 3 : f</span></div></div>",
-        "<div><div><span>Component 3 : a</span></div></div>",
+        "<span>Component 3 : f</span>",
+        "<span>Component 3 : a</span>",
         "<div></div>",
-        "<div><div><span>Component 1 : f</span><span>Component 2 : b</span></div></div>",
-        "<div><div><span>Component 1 : f</span><span>Component 2 : c</span></div></div>",
-        "<div><div><span>Component 1 : a</span><span>Component 2 : c</span></div></div>",
-        "<div><div><span>Component 1 : a</span><span>Component 2 : d</span></div></div>"
+        "<div><span>Component 1 : f</span><span>Component 2 : b</span></div>",
+        "<div><span>Component 1 : f</span><span>Component 2 : c</span></div>",
+        "<div><span>Component 1 : a</span><span>Component 2 : c</span></div>",
+        "<div><span>Component 1 : a</span><span>Component 2 : d</span></div>"
       ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags

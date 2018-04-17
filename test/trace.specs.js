@@ -187,10 +187,10 @@ QUnit.test("edge case - App is an atomic component (depth tree 0)", function exe
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style="width: 450px; height: 200px"></iframe><div><div>DOM_SINK emits: a</div></div></div>`,
-        `<div><iframe id=\"${iframeId.slice(1)}\" src=\"${iframeSource}\" style=\"width: 450px; height: 200px\"></iframe><div><div>DOM_SINK emits: A</div></div></div>`,
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style=\"width: 450px; height: 200px\"></iframe><div><div>DOM_SINK emits: b</div></div></div>`,
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style=\"width: 450px; height: 200px\"></iframe><div><div>DOM_SINK emits: B</div></div></div>`
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -283,7 +283,7 @@ QUnit.test("edge case - App is an atomic component (depth tree 0)", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -390,7 +390,7 @@ QUnit.test("edge case - App is an atomic component (depth tree 0)", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -462,7 +462,7 @@ QUnit.test("edge case - App is an atomic component (depth tree 0)", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -569,7 +569,7 @@ QUnit.test("edge case - App is an atomic component (depth tree 0)", function exe
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -630,11 +630,11 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style="width: 450px; height: 200px"></iframe><div><div><div>DOM_SINK emits: a</div></div></div></div>`,
-        `<div><iframe id=\"${iframeId.slice(1)}\" src=\"${iframeSource}\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: A</div></div></div></div>`,
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: b</div></div></div></div>`,
-        `<div><iframe id="${iframeId.slice(1)}" src="${iframeSource}" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: B</div></div></div></div>`
-      ],
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div></div>"
+        ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -696,7 +696,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "a_driver",
         "notification": {
@@ -758,12 +758,12 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -781,7 +781,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -812,7 +812,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "a_driver",
         "notification": {
@@ -865,7 +865,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "another_driver",
         "notification": {
@@ -927,12 +927,12 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -950,7 +950,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -980,7 +980,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "a_driver",
         "notification": {
@@ -1042,12 +1042,12 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -1065,7 +1065,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -1096,7 +1096,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "a_driver",
         "notification": {
@@ -1149,7 +1149,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "another_driver",
         "notification": {
@@ -1211,12 +1211,12 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
     },
     {
       "combinatorName": "Combine",
-      "componentName": APP_NAME,
+      "componentName": "App",
       "emits": {
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -1234,7 +1234,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 1 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -1299,13 +1299,13 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
     },
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -1560,7 +1560,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -1675,7 +1675,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -1751,7 +1751,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -1920,7 +1920,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -2050,7 +2050,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -2165,7 +2165,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -2241,7 +2241,7 @@ QUnit.test("main case - Combine - component tree depth 1 - no container - 2 comp
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
         },
         "type": 1
       },
@@ -2355,10 +2355,10 @@ QUnit.test("main case - Combine - component tree depth 1 - 1 container - 1 compo
     },
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div class=\"container\"><div>DOM_SINK emits: B</div></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div>DOM_SINK emits: a</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div>DOM_SINK emits: A</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div>DOM_SINK emits: b</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div>DOM_SINK emits: B</div></div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -2556,7 +2556,7 @@ QUnit.test("main case - Combine - component tree depth 1 - 1 container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div>"
+          "value": "<div class=\"container\"><div>DOM_SINK emits: a</div></div>"
         },
         "type": 1
       },
@@ -2725,7 +2725,7 @@ QUnit.test("main case - Combine - component tree depth 1 - 1 container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div>"
+          "value": "<div class=\"container\"><div>DOM_SINK emits: A</div></div>"
         },
         "type": 1
       },
@@ -2840,7 +2840,7 @@ QUnit.test("main case - Combine - component tree depth 1 - 1 container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div>"
+          "value": "<div class=\"container\"><div>DOM_SINK emits: b</div></div>"
         },
         "type": 1
       },
@@ -3009,7 +3009,7 @@ QUnit.test("main case - Combine - component tree depth 1 - 1 container - 1 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div class=\"container\"><div>DOM_SINK emits: B</div></div></div>"
+          "value": "<div class=\"container\"><div>DOM_SINK emits: B</div></div>"
         },
         "type": 1
       },
@@ -3018,7 +3018,8 @@ QUnit.test("main case - Combine - component tree depth 1 - 1 container - 1 compo
       "path": [
         0
       ]
-    }];
+    }
+  ];
 
   const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
     tickDuration: 3,
@@ -3073,14 +3074,14 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
     },
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: a</div></div><div><div>DOM_SINK emits another : a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : B</div></div></div></div></div>"
-      ],
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
+        ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -3271,7 +3272,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -3431,7 +3432,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : a</div></div>"
+          "value": "<div>DOM_SINK emits another : a</div>"
         },
         "type": 1
       },
@@ -3450,7 +3451,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div><div><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -3468,7 +3469,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: a</div></div><div><div>DOM_SINK emits another : a</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -3589,7 +3590,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -3608,7 +3609,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -3626,7 +3627,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : a</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -3710,7 +3711,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : A</div></div>"
+          "value": "<div>DOM_SINK emits another : A</div>"
         },
         "type": 1
       },
@@ -3729,7 +3730,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -3747,7 +3748,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : A</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -3942,7 +3943,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -3961,7 +3962,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -3979,7 +3980,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : A</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -4137,7 +4138,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : b</div></div>"
+          "value": "<div>DOM_SINK emits another : b</div>"
         },
         "type": 1
       },
@@ -4156,7 +4157,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -4174,7 +4175,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : b</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -4295,7 +4296,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -4314,7 +4315,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -4332,7 +4333,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : b</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -4416,7 +4417,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : B</div></div>"
+          "value": "<div>DOM_SINK emits another : B</div>"
         },
         "type": 1
       },
@@ -4435,7 +4436,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : B</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
         },
         "type": 1
       },
@@ -4453,7 +4454,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : B</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
         },
         "type": 1
       },
@@ -4536,7 +4537,8 @@ QUnit.test("main case - Combine - component tree depth 2 - 0 container - 2 compo
       "path": [
         0
       ]
-    }];
+    }
+  ];
 
   const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
     tickDuration: 3,
@@ -4591,13 +4593,13 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
     },
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: a</div></div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits another : B</div></div></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div class=\"container\"><div>DOM_SINK emits another : B</div></div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -4842,7 +4844,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -5021,7 +5023,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>"
         },
         "type": 1
       },
@@ -5039,7 +5041,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: a</div></div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>"
         },
         "type": 1
       },
@@ -5160,7 +5162,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -5179,7 +5181,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>"
         },
         "type": 1
       },
@@ -5197,7 +5199,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div class=\"container\"><div>DOM_SINK emits another : a</div></div></div>"
         },
         "type": 1
       },
@@ -5300,7 +5302,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>"
         },
         "type": 1
       },
@@ -5318,7 +5320,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>"
         },
         "type": 1
       },
@@ -5513,7 +5515,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -5532,7 +5534,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>"
         },
         "type": 1
       },
@@ -5550,7 +5552,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div class=\"container\"><div>DOM_SINK emits another : A</div></div></div>"
         },
         "type": 1
       },
@@ -5727,7 +5729,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>"
         },
         "type": 1
       },
@@ -5745,7 +5747,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>"
         },
         "type": 1
       },
@@ -5866,7 +5868,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -5885,7 +5887,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>"
         },
         "type": 1
       },
@@ -5903,7 +5905,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div class=\"container\"><div>DOM_SINK emits another : b</div></div></div>"
         },
         "type": 1
       },
@@ -6006,7 +6008,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits another : B</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div class=\"container\"><div>DOM_SINK emits another : B</div></div></div>"
         },
         "type": 1
       },
@@ -6024,7 +6026,7 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits another : B</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div class=\"container\"><div>DOM_SINK emits another : B</div></div></div>"
         },
         "type": 1
       },
@@ -6107,7 +6109,8 @@ QUnit.test("main case - Combine - component tree depth 2 - 1 container - 2 compo
       "path": [
         0
       ]
-    }];
+    }
+  ];
 
   const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
     tickDuration: 3,
@@ -6161,15 +6164,15 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
       successMessage: `sink ${ANOTHER_DRIVER} produces the expected values`
     },
     [DOM_SINK]: {
-      outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: a</div></div><div><div>DOM_SINK emits another : a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : B</div></div></div></div></div>"
-      ],
+      outputs:        [
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>",
+          "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
+        ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
     },
@@ -6360,7 +6363,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -6520,7 +6523,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : a</div></div>"
+          "value": "<div>DOM_SINK emits another : a</div>"
         },
         "type": 1
       },
@@ -6539,7 +6542,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div><div><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -6557,7 +6560,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: a</div></div><div><div>DOM_SINK emits another : a</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: a</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -6678,7 +6681,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -6697,7 +6700,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : a</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -6715,7 +6718,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : a</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : a</div></div>"
         },
         "type": 1
       },
@@ -6799,7 +6802,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : A</div></div>"
+          "value": "<div>DOM_SINK emits another : A</div>"
         },
         "type": 1
       },
@@ -6818,7 +6821,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -6836,7 +6839,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div><div><div>DOM_SINK emits another : A</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: A</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -7031,7 +7034,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -7050,7 +7053,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : A</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -7068,7 +7071,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : A</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : A</div></div>"
         },
         "type": 1
       },
@@ -7226,7 +7229,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : b</div></div>"
+          "value": "<div>DOM_SINK emits another : b</div>"
         },
         "type": 1
       },
@@ -7245,7 +7248,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -7263,7 +7266,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div><div><div>DOM_SINK emits another : b</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: b</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -7384,7 +7387,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -7403,7 +7406,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : b</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -7421,7 +7424,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : b</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : b</div></div>"
         },
         "type": 1
       },
@@ -7505,7 +7508,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits another : B</div></div>"
+          "value": "<div>DOM_SINK emits another : B</div>"
         },
         "type": 1
       },
@@ -7524,7 +7527,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : B</div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
         },
         "type": 1
       },
@@ -7542,7 +7545,7 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div><div><div>DOM_SINK emits another : B</div></div></div></div>"
+          "value": "<div><div>DOM_SINK emits: B</div><div>DOM_SINK emits another : B</div></div>"
         },
         "type": 1
       },
@@ -7625,7 +7628,8 @@ QUnit.test("main case - Combine, InjectSettings - component tree depth 2 - 0 con
       "path": [
         0
       ]
-    }];
+    }
+  ];
 
   const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
     tickDuration: 3,
@@ -7684,10 +7688,10 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
     },
     [DOM_SINK]: {
       outputs: [
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: a</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: A</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: b</div></div></div></div></div>",
-        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div><div><div><div>DOM_SINK emits: B</div></div></div></div></div>"
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: a</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: A</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: b</div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div>DOM_SINK emits: B</div></div>"
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML)
@@ -7879,7 +7883,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: a</div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -7898,7 +7902,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: a</div></div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -7916,7 +7920,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: a</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: a</div>"
         },
         "type": 1
       },
@@ -8111,7 +8115,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: A</div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -8130,7 +8134,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: A</div></div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -8148,7 +8152,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: A</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: A</div>"
         },
         "type": 1
       },
@@ -8388,7 +8392,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: b</div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -8407,7 +8411,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: b</div></div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -8425,7 +8429,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: b</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: b</div>"
         },
         "type": 1
       },
@@ -8620,7 +8624,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div>DOM_SINK emits: B</div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -8639,7 +8643,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div>DOM_SINK emits: B</div></div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },
@@ -8657,7 +8661,7 @@ QUnit.test("main case - Combine, InjectSources - component tree depth 2 - 0 cont
         "identifier": "DOM",
         "notification": {
           "kind": "N",
-          "value": "<div><div><div><div>DOM_SINK emits: B</div></div></div></div>"
+          "value": "<div>DOM_SINK emits: B</div>"
         },
         "type": 1
       },

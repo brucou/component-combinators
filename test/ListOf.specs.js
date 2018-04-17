@@ -168,9 +168,9 @@ QUnit.test("main case - each child generates its actions unhinged - ListOf 1 ite
     DOM: {
       // NOTE : one can see here the `combineLatest` in action : a-a-a ; b-a-a; b-b-a; b-b-b
       outputs: [
-        "<div><span>List Component 0 : ITEM1 - a</span></div>",
-        "<div><span>List Component 0 : ITEM1 - b</span></div>",
-        "<div><span>List Component 0 : ITEM1 - c</span></div>"
+        "<span>List Component 0 : ITEM1 - a</span>",
+        "<span>List Component 0 : ITEM1 - b</span>",
+        "<span>List Component 0 : ITEM1 - c</span>"
       ],
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
@@ -240,7 +240,7 @@ QUnit.test("main case - each child generates its actions unhinged - ListOf no it
     // there would be x > 0 items in the list
   const expected = {
       DOM: {
-        outputs: ["<div><div></div></div>"],
+        outputs: ["<div></div>"],
         successMessage: 'sink DOM produces the expected values',
         transform: pipe(convertVNodesToHTML)
       },

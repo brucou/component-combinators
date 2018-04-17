@@ -583,9 +583,9 @@ QUnit.test("Good settings > empty settings : 1 child component", function exec_t
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -693,9 +693,9 @@ QUnit.test("Good settings > custom settings : 1 custom x one child component", f
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -831,9 +831,9 @@ QUnit.test("Good settings > custom settings : 2 custom x one child component", f
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -975,9 +975,9 @@ QUnit.test("Good settings > DOM settings : 1 DOM x one child component", functio
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -1154,9 +1154,9 @@ QUnit.test("Good settings > DOM settings : (> 1 DOM, same event) x one child com
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -1346,9 +1346,9 @@ QUnit.test(`Good settings > DOM settings : (> 1 DOM, different event) x one chil
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -1533,9 +1533,9 @@ QUnit.test("Good settings > DOM settings : 1 custom & 1 DOM x one child componen
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,
@@ -1757,9 +1757,9 @@ QUnit.test("Good settings > DOM settings : >1 custom & >1 DOM x one child compon
     },
     [DOM_SINK]: {
       outputs: [
-        `<div><span>${DOM_SINK} ${SEP} a</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} b</span></div>`,
-        `<div><span>${DOM_SINK} ${SEP} c</span></div>`
+        `<span>${DOM_SINK} ${SEP} a</span>`,
+        `<span>${DOM_SINK} ${SEP} b</span>`,
+        `<span>${DOM_SINK} ${SEP} c</span>`
       ],
       transform: convertVNodesToHTML,
       successMessage: `sink ${DOM_SINK} produces the expected values`,

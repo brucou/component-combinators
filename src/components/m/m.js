@@ -70,6 +70,20 @@ const defaultMergeSinkConfig = {
 // Helpers
 /**
  *
+ * @param arrayVNode
+ * @returns {*} returns Array<vNode | Array<vNode>>
+ */
+function unwrap(arrayVNode){
+  // NOTE: by construction, arrayVNode has at least two elements
+  return arrayVNode.map(vNode => {
+    return (vNode.data && vNode.data.unwrap)
+      ? vNode.children
+      : vNode
+  })
+}
+
+/**
+ *
  * @param slotHole
  * @param childrenSlotContent
  * @modifies slotHole
@@ -278,13 +292,14 @@ function mergeChildrenIntoParentDOM(parentDOMSink) {
          // we put the extra `div` only when there are several vNodes
          // that did not work though... `insertBefore : error...`
          // KEPT AS ADR i.e. documenting past choices
-         // TODO : try div({data : {unwrap : true}}, _arrayVNode)
-         // then below (default) div(unwrap(_arrayVNode))
+         // TODO : NO! try to reoproduce the error and analyze it
          */
          case 1 :
          return _arrayVNode[0]
         default :
-          return div(_arrayVNode)
+          // TODO : try div({data : {unwrap : true}}, _arrayVNode)
+          // then below (default) div(unwrap(_arrayVNode))
+          return div({unwrap : true}, flatten(unwrap(_arrayVNode)))
       }
     }
     else {

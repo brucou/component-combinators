@@ -94,7 +94,7 @@ QUnit.test(
 
     const vNodes = [
       // 1
-      div([
+      div({unwrap : true},[
         h('div', {}, [
           h('span', { style: { fontWeight: 'bold' } }, testSettings.main),
         ]),
@@ -103,7 +103,7 @@ QUnit.test(
         ]),
       ]),
       // 2
-      div([
+      div({unwrap : true}, [
         h('div', {}, [
           h('span', { style: { fontWeight: 'bold' } }, testSettings.main),
         ]),
@@ -111,7 +111,7 @@ QUnit.test(
           h('span', { style: { fontWeight: 'italic' } }, 'local setting'),
         ]),
       ]),// 3
-      div([
+      div({unwrap : true}, [
         h('div', {}, [
           h('span', { style: { fontWeight: 'bold' } }, testSettings.main),
         ]),

@@ -186,7 +186,7 @@ QUnit.test("non-nested routing - transitions no match -> match", function exec_t
     [DOM_SINK]: {
       outputs: [
         null,
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'group', {}, 'c')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'group', {}, 'd')[DOM_SINK]}`))
+        "<div><span>Component 1 on route 'group' > routeParams - DOM1: <empty object> - c</span><span>Component 2 on route 'group' > routeParams - DOM2: <empty object> - d</span></div>"
       ],
       successMessage: `sink ${DOM_SINK} : transition any -> match produces a null value as the first value of the DOM sink, then the regular DOM sinks as computed from the component`,
       transform: pipe(convertVNodesToHTML),
@@ -254,7 +254,7 @@ QUnit.test("non-nested routing - transitions match -> no match, also testing par
     [DOM_SINK]: {
       outputs: [
         null,
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'group:param', { param: '?paramKey=paramValue' }, 'c')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'group:param', { param: '?paramKey=paramValue' }, 'd')[DOM_SINK]}`)),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'group:param', { param: '?paramKey=paramValue' }, 'c')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'group:param', { param: '?paramKey=paramValue' }, 'd')[DOM_SINK]}`),
         // NOTE : extra null triggered by transition match -> no match
         null
       ],
@@ -330,11 +330,11 @@ QUnit.test("non-nested routing - transitions", function exec_test(assert) {
       outputs: [
         null, // transition init -> no match
         null, // match starts with null
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'group', {}, 'c')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'group', {}, 'd')[DOM_SINK]}`)),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'group', {}, 'c')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'group', {}, 'd')[DOM_SINK]}`),
         null, // transition match -> no match
         null, // match starts with null
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'd')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'f')[DOM_SINK]}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'e')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'f')[DOM_SINK]}`)),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'd')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'f')[DOM_SINK]}`),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'e')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'f')[DOM_SINK]}`),
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML),
@@ -449,19 +449,19 @@ QUnit.test("nested routing depth 1 - transitions", function exec_test(assert) {
         null, // init -> no match
         // no match -> no match = nothing
         null, // match starts with null
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'c')[DOM_SINK]}`)),
+        `${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'c')[DOM_SINK]}`,
         // match -> match same section = repeats?
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'c')[DOM_SINK]}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'c')[DOM_SINK]}${divwrap(getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'e')[DOM_SINK])}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'd')[DOM_SINK]}${divwrap(getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'e')[DOM_SINK])}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'd')[DOM_SINK]}${divwrap(getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'f')[DOM_SINK])}`)),
+        `${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'c')[DOM_SINK]}`,
+        divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'c')[DOM_SINK]}${getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'e')[DOM_SINK]}`),
+        divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'd')[DOM_SINK]}${getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'e')[DOM_SINK]}`),
+        divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'd')[DOM_SINK]}${getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'f')[DOM_SINK]}`),
         // match -< match on child, child DOM will starts with null, so parent will be repeating
         // former value = d
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'd')[DOM_SINK]}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'e')[DOM_SINK]}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'e')[DOM_SINK]}${divwrap(getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail2' }, 'g')[DOM_SINK])}`)),
+        `${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'd')[DOM_SINK]}`,
+        `${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'e')[DOM_SINK]}`,
+        divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'e')[DOM_SINK]}${getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail2' }, 'g')[DOM_SINK]}`),
         null, // master vs. master?xx are different sections -> resets to null
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '?queryStringMaster' }, 'f')[DOM_SINK]}`)),
+        `${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '?queryStringMaster' }, 'f')[DOM_SINK]}`,
         null,// // master vs. master?xx are different sections -> resets to null
         // master vs. anything -> null, null.
         // 1. null to finish master, combinedLatest with null on anything branch (never was
@@ -469,11 +469,11 @@ QUnit.test("nested routing depth 1 - transitions", function exec_test(assert) {
         // 2. then null to start anything branch, combinedLatest with null on master branch
         null,
         null,
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'g')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'j')[DOM_SINK]}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'g')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'k')[DOM_SINK]}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'h')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'k')[DOM_SINK]}`)),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'g')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'j')[DOM_SINK]}`),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'g')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'k')[DOM_SINK]}`),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'h')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'k')[DOM_SINK]}`),
         // d => match on master branch -> null there combinedLAtest with anything branch -> repeats
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'h')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'k')[DOM_SINK]}`)),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'h')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'k')[DOM_SINK]}`),
         // then anything branch no match -> null (if anything branch was before master branch
         // would not happen i.e. this is subscription-order dependent) but eventually all is well
         null,
@@ -482,16 +482,16 @@ QUnit.test("nested routing depth 1 - transitions", function exec_test(assert) {
         // then moving back to anything reproduces double null by the same reasoning as before
         null,
         null,
-        divwrap(divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'i')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'm')[DOM_SINK]}`)),
+        divwrap(`${getHelperComponentOutput('Component 1', A_SOURCE, 'anything', {}, 'i')[DOM_SINK]}${getHelperComponentOutput('Component 2', ANOTHER_SOURCE, 'anything', {}, 'm')[DOM_SINK]}`),
         null,
         null, // because of transition a -> f
         null, // double null because of f-> b
         null,
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'k')[DOM_SINK]}`)),
+        `${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'k')[DOM_SINK]}`,
         null,
         null,
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'm')[DOM_SINK]}${divwrap(getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'r')[DOM_SINK])}`)),
-        divwrap(divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'm')[DOM_SINK]}${divwrap(getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 's')[DOM_SINK])}`)),
+        divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'm')[DOM_SINK]}${getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 'r')[DOM_SINK]}`),
+        divwrap(`${getHelperComponentOutput('Master component', A_SOURCE, 'master', { qs: '' }, 'm')[DOM_SINK]}${getHelperComponentOutput('Detail component', ANOTHER_SOURCE, 'detail:qs', { qs: '?queryStringDetail1' }, 's')[DOM_SINK]}`),
       ],
       successMessage: `sink ${DOM_SINK} produces the expected values`,
       transform: pipe(convertVNodesToHTML),
