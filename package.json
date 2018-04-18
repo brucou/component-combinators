@@ -21,7 +21,7 @@
     "debug/",
     "helpers/",
     "contracts/",
-    "tracing/",
+    "tracing/"
   ],
   "browserify": {
     "transform": [
