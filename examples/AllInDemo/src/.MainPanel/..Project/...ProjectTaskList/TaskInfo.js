@@ -7,7 +7,7 @@ const $ = Rx.Observable;
 
 // TODO : check the classes
 const renderTaskInfo = (info, title) => info ?
-  div('.task-infos__info', { style: info ? 'none' : 'initial' },
+  div('.task-infos__info', { style: {display : info ? 'none' : 'initial' }},
     title ? [strong(`${title}: `), info] : info
   )
   : undefined

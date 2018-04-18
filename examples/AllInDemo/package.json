@@ -65,7 +65,7 @@
     "moment": "^2.20.1",
     "ramda": "^0.25.0",
     "rx": "^4.1.0",
-    "@rxcc/components": "0.4.2",
+    "@rxcc/components": "0.4.3",
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/drivers": "~0.1.9",
     "@rxcc/testing": "^0.1.3",
