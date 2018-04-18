@@ -38,7 +38,7 @@ export function Pagination(sources, settings) {
 
   return {
     [DOM_SINK]: $.of(
-      div(".ui.steps.unstackable", renderedPaginationSection),
+      div(".ui.steps.unstackable.bottom.attached", renderedPaginationSection),
     ),
     domainAction$: $.merge(changePageActions)
   }

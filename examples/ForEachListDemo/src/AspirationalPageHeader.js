@@ -9,7 +9,7 @@ export function AspirationalPageHeader(sources, settings) {
 
   return {
     [DOM_SINK]: $.of(
-      div(".ui.left.breadcrumb", [
+      div(".ui", [
         a(".section", [`Home`]),
         i(".right.chevron.icon.divider"),
         div(".active.section", [`TODO`])
