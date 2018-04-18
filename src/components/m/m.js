@@ -203,7 +203,6 @@ function getSlotHoles(vNode) {
   ? removeFirstDup(topSlot, _slotHoles)
     : _slotHoles;
 
-  debugger
   // Main case : no given slot name has more than one corresponding slot hole, or 14 April 2018 : if that is the
   // case, that slot is at the vNode root
   return slotHoles
