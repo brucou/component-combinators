@@ -1,6 +1,6 @@
 {
   "name": "@rxcc/tracing",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "tracing utilities for component combinators library",
   "repository": {
     "type": "git",

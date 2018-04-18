@@ -20,7 +20,8 @@
     "drivers/",
     "debug/",
     "helpers/",
-    "contracts/"
+    "contracts/",
+    "tracing/",
   ],
   "browserify": {
     "transform": [
