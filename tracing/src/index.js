@@ -14,6 +14,10 @@ import { pathOr, set, view } from 'ramda'
 import { assertContract } from "../../contracts/src"
 import { isTraceDefSpecs } from "./contracts"
 
+export * from './helpers'
+export * from './properties'
+export * from './contracts'
+
 let graphCounter = 0;
 
 function getGraphCounter() { return graphCounter++}
