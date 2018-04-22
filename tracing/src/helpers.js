@@ -21,10 +21,8 @@ export function isLeafComponent(component) {
   // - components returned by `m`, i.e.
   //   - named `mComponent`
   //   - named `??` if advised around ; same name ``mComponent` for now
-  // TODO : check that works with InSlot because that combinator is not using `m`...
-  // TODO : this is wrong, nothing to do with InSlot... use isLeaf prop somehow ... test
 
-  return !(component.name === `mComponent` || component.isLeaf === false || component.name === `InSlot`)
+  return !(component.name.startsWith(`mComponent`) || component.isLeaf === false)
 }
 
 export function getLeafComponentName(component) {

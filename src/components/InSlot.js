@@ -8,7 +8,7 @@ import {set} from 'ramda'
 // NOTE ADR: we use `m` here, we have to, to benefit from the tracing functionality that m offers.
 export function InSlot(slotName, [component]) {
   // TODO : add a contract checking array of one component
-  return function InSlot(sources, settings) {
+  return function mComponentInSlot(sources, settings) {
     const sinks = m({}, set(combinatorNameInSettings, 'InSlot', {}), [component])(sources, settings);
     const vNodes$ = sinks[DOM_SINK];
 

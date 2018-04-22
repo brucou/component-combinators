@@ -115,7 +115,38 @@ function DisplayTree(displayTreeSettings, componentTree) {
   // instaed of 0
   // TODO : one alternative could be to pass componentTree in settings (in that case not propagate it down) or closure
   // try to use directly a function (sources, settings) which applies directly displayTreeSpecs.computeSinks
-  return m(displayTreeSpecs, set(combinatorNameInSettings, 'DisplayTree', {}), componentTree)
+  return function mComponent(sources, settings){
+      // NOTE : here parentComponent is null by definition
+      const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = componentTree;
+      // NOTE : as those components are leaves in the component tree, they are advised automatically, so unadvise them
+      // not to falsify the auto-generated location path in the component tree
+      const childrenComponents = componentTree.map(childComponent => isAdvised(childComponent)
+        ? removeAdvice(childComponent)
+        : childComponent);
+      const { treeSettings } = settings;
+      const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode, localCommandSpecs, lenses } = treeSettings;
+      // yeah I know, double indirection
+      const tree = settings[localTreeSetting];
+
+      if (isNil(tree)) {
+        return m({}, set(combinatorNameInSettings, 'DisplayTree|Inner', {}), [TreeEmpty])(sources, settings)
+      }
+      else {
+        // traverse the tree to build the displaying component
+        const pathMap = postOrderTraverseTree(
+          lenses,
+          { seed: () => Map, visit: buildDisplayTreeComponentFrom(lenses, childrenComponents, settings) },
+          tree
+        );
+        const displayTreeComponent = pathMap.get(stringify(PATH_ROOT));
+        //  pathMap.clear(); don't clear, so use a weakmap, we will need this for all the life time of the component
+
+        // Actually the root has already been dealt with as a regular node. This gives an opportunity to wrap the
+        // component up as necessary (in additional to convenient html wrapping tags, `TreeRoot` could also gather event
+        // handling for all nodes)
+        return m({}, set(combinatorNameInSettings, 'DisplayTree|Inner', {}), [TreeRoot, [displayTreeComponent]])(sources, settings)
+      }
+    }
 }
 
 export function Tree(_treeSettings, arrayComponents) {
@@ -140,7 +171,7 @@ export function Tree(_treeSettings, arrayComponents) {
         settings: _treeSettings
       }, [
         ForEach({ from: treeSource, as: localTreeSetting, sinkNames }, [
-          DisplayTree({}, [
+          DisplayTree(set(combinatorNameInSettings, `DisplayTree`, {}), [
             TreeEmpty, TreeRoot, TreeNode, TreeLeaf
           ])
         ])
