@@ -2,9 +2,11 @@ import * as QUnit from "qunitjs"
 import * as Rx from 'rx'
 import { convertVNodesToHTML, DOM_SINK } from "../utils/src"
 import { runTestScenario } from "../testing/src/runTestScenario"
-import { a, div, li, ol, ul, span } from "cycle-snabbdom"
+import { a, div, li, ol } from "cycle-snabbdom"
 import { Tree } from "../src/components/UI"
-import { pipe } from 'ramda'
+import { omit, identity, pipe, set } from 'ramda'
+import { componentNameInSettings, traceApp, traceBehaviourSinkFn, traceBehaviourSourceFn } from "../tracing/src"
+import { traceDOMsinkFn, traceEventSinkFn, traceEventSourceFn } from "../tracing/src/helpers"
 
 const $ = Rx.Observable;
 
@@ -45,6 +47,28 @@ const treeDepth2 = {
     { label: "right" }
   ]
 };
+const tree1 = {
+  label: "root",
+  children: [
+    { label: "left" },
+  ]
+};
+const tree2 = {
+  label: "root",
+  children: [
+    { label: "right" },
+  ]
+};
+function removeWhenField(traces) {
+  return traces.map(trace => omit(['when'], trace))
+}
+
+function getId(start) {
+  let counter = start;
+  return function () {
+    return counter++
+  }
+}
 
 function cleanString(str) {
   return str.trim().replace(/\s\s+|\n|\r/g, ' ').replace(/> </g, '><')
@@ -58,8 +82,8 @@ function TreeEmpty(sources, settings) {
 
 function TreeRoot(sources, settings) {
   return {
-    [DOM_SINK]: $.of(div('.tree.left.inspire-tree', {},[
-      ol({slot : NODE_SLOT}, [])
+    [DOM_SINK]: $.of(div('.tree.left.inspire-tree', {}, [
+      ol({ slot: NODE_SLOT }, [])
     ]))
   }
 }
@@ -69,7 +93,7 @@ function TreeNode(sources, settings) {
 
   return {
     [DOM_SINK]: $.of(
-      li(".collapsed.selectable.draggable.drop-target.rendered.folder", {slot: NODE_SLOT}, [
+      li(".collapsed.selectable.draggable.drop-target.rendered.folder", { slot: NODE_SLOT }, [
         div(".title-wrap", [
           a(".toggle.icon.icon-expand"),
           a(".title.icon.icon-folder", {
@@ -80,7 +104,25 @@ function TreeNode(sources, settings) {
           }, [`TreeNode@${path} : ${label}`])
         ]),
         div(".wholerow"),
-        ol({slot: NODE_SLOT}, [])
+        ol({ slot: NODE_SLOT }, [])
+      ])
+    )
+  }
+}
+
+function TreeNodeLight(sources, settings) {
+  const { path, label } = settings;
+
+  return {
+    [DOM_SINK]: $.of(
+      li(".collapsed", { slot: NODE_SLOT }, [
+        a(".title.icon.icon-folder", {
+          "attrs": {
+            "tabindex": "1",
+            "unselectable": "on",
+          }
+        }, [`TreeNode@${path} : ${label}`]),
+        ol({ slot: NODE_SLOT }, [])
       ])
     )
   }
@@ -91,7 +133,7 @@ function TreeLeaf(sources, settings) {
 
   return {
     [DOM_SINK]: $.of(
-      li(".collapsed.selectable.draggable.drop-target.leaf", {slot: NODE_SLOT}, [
+      li(".collapsed.selectable.draggable.drop-target.leaf", { slot: NODE_SLOT }, [
         div(".title-wrap", [
           a(".title.icon.icon-file-empty", {
             "attrs": {
@@ -103,6 +145,22 @@ function TreeLeaf(sources, settings) {
         div(".wholerow")
       ])
     )
+  }
+}
+
+function TreeLeafWithPrintedUIstate(sources, settings) {
+  const { LOCAL_STATE_SOURCE_NAME: uiState$ } = sources;
+  const { path, label } = settings;
+
+  return {
+    [DOM_SINK]: uiState$.map(uiStateMap => {
+      const uiStateToString = JSON.stringify([...uiStateMap]);
+
+      return li(".collapsed", { slot: NODE_SLOT }, [
+        a(".title.icon.icon-file-empty", {}, [`TreeLeaf@${path} : ${label} | UI state : ${uiStateToString}`])
+      ])
+    })
+
   }
 }
 
@@ -219,7 +277,8 @@ QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
   // document.body.appendChild(div);
 });
 
-QUnit.skip("Main cases - tree depth 2, depth 1 and deph2", function exec_test(assert) {
+QUnit.test("Main cases - tree depth 2, depth 1 and depth2", function exec_test(assert) {
+  const traces = [];
   const done = assert.async(2);
   const _treeSettings = {
     treeSettings: {
@@ -229,19 +288,31 @@ QUnit.skip("Main cases - tree depth 2, depth 1 and deph2", function exec_test(as
       defaultUIstateNode: { isExpanded: true },
       localCommandSpecs: { source: COMMAND_SOURCE_NAME, executeFn: commandExecFn },
       lenses: { getChildren: tree => tree.children || [], getLabel: tree => tree.label || '' },
-      sinkNames: [A_SINK, DOM_SINK]
+      sinkNames: [DOM_SINK]
     }
   };
 
-  const arrayComponents = [TreeEmpty, TreeRoot, TreeNode, TreeLeaf];
+  const arrayComponents = [TreeEmpty, TreeRoot, TreeNodeLight, TreeLeafWithPrintedUIstate];
 
-  const treeComponent = Tree(_treeSettings, arrayComponents);
+  const treeComponent = Tree(set(componentNameInSettings, 'treeComponent', _treeSettings), arrayComponents);
+
+  const tracedApp = traceApp({
+    _trace: {
+      traceSpecs: {
+        [LOCAL_STATE_SOURCE_NAME]: [traceBehaviourSourceFn, traceBehaviourSinkFn],
+        [TREE_SOURCE_NAME]: [traceEventSourceFn, traceEventSinkFn],
+        [DOM_SINK]: [identity, traceDOMsinkFn]
+      },
+      sendMessage: msg => traces.push(msg)
+    },
+    _helpers: { getId: getId(0) }
+  }, treeComponent);
 
   const inputs = [
     {
       [TREE_SOURCE_NAME]: {
-        diagram: '-aba',
-        values: { a: treeDepth2, b: treeDepth1 }
+        diagram: '-a---',
+        values: { a: tree1, b: tree2}
       }
     },
   ];
@@ -298,14 +369,12 @@ QUnit.skip("Main cases - tree depth 2, depth 1 and deph2", function exec_test(as
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
       transform: pipe(convertVNodesToHTML)
     },
-    [A_SINK]: {
-      outputs: [],
-      successMessage: 'sink produces the expected values',
-      // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
-    },
   }
 
-  runTestScenario(inputs, expected, treeComponent, {
+  const expectedGraph = [2];
+  const expectedTraces = [1];
+
+  const testResult = runTestScenario(inputs, expected, tracedApp, {
     tickDuration: 3,
     waitForFinishDelay: 10,
     analyzeTestResults: analyzeTestResults(assert, done),
@@ -313,6 +382,12 @@ QUnit.skip("Main cases - tree depth 2, depth 1 and deph2", function exec_test(as
       done(err)
     }
   })
+  testResult
+    .then(_ => {
+      console.error('traces', traces)
+      assert.deepEqual(removeWhenField(traces), expectedGraph.concat(expectedTraces), `Traces are produced as expected!`);
+      done()
+    });
 
   // const div = document.createElement('div');
   // div.innerHTML = treeNodes.trim();

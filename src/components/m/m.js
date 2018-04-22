@@ -414,27 +414,27 @@ function computeSinksWithGenericStrategy(computeSinks, componentTree, extendedSo
 function computeSinksWithAllSinksStrategy(mergeSinks, componentTree, extendedSources,
                                           localSettings) {
   console.groupCollapsed(`computeSinksWithAllSinksStrategy`);
-  console.trace(`Computing container sinks with settings : %O`, localSettings);
+  console.debug(`Computing container sinks with settings : %O`, localSettings);
 
   const { parentComponent, childrenComponents } =  deconstructComponentTree(componentTree);
   const containerSinks = parentComponent ? parentComponent(extendedSources, localSettings) : null;
 
-  console.trace(`Computed container sinks`);
+  console.debug(`Computed container sinks`);
 
-  console.trace(`Computing children sinks with settings : %O`, localSettings);
+  console.debug(`Computing children sinks with settings : %O`, localSettings);
 
   const childrenSinks = computeChildrenSinks(childrenComponents, extendedSources, localSettings);
 
-  console.trace(`Computed children sinks`);
+  console.debug(`Computed children sinks`);
 
   assertContract(isOptSinks, [containerSinks], 'containerSinks must be a hash of observable sink');
   assertContract(isArrayOptSinks, [childrenSinks], 'childrenSinks must be an array of sinks');
 
-  console.trace(`Computing reduced sinks`);
+  console.debug(`Computing reduced sinks`);
 
   const reducedSinks = mergeSinks(containerSinks, childrenSinks, localSettings);
 
-  console.trace(`Computed reduced sinks`);
+  console.debug(`Computed reduced sinks`);
   console.groupEnd()
 
   return reducedSinks
@@ -448,18 +448,18 @@ function computeSinksWithPerSinkStrategy(mergeSinks, componentTree, extendedSour
   const { parentComponent, childrenComponents } =  deconstructComponentTree(componentTree);
   const containerSinks = parentComponent ? parentComponent(extendedSources, localSettings) : null;
 
-  console.trace(`Computed container sinks`);
+  console.debug(`Computed container sinks`);
 
-  console.trace(`Computing children sinks with settings : %O`, localSettings);
+  console.debug(`Computing children sinks with settings : %O`, localSettings);
 
   const childrenSinks = computeChildrenSinks(childrenComponents, extendedSources, localSettings);
 
-  console.trace(`Computed children sinks`);
+  console.debug(`Computed children sinks`);
 
   assertContract(isOptSinks, [containerSinks], 'containerSinks must be a hash of observable sink');
   assertContract(isArrayOptSinks, [childrenSinks], 'childrenSinks must be an array of sinks');
 
-  console.trace(`Computing reduced sinks with merge functions for sinks : ${keys(mergeSinks)}`);
+  console.debug(`Computing reduced sinks with merge functions for sinks : ${keys(mergeSinks)}`);
 
   const allSinks = flatten(removeNullsFromArray([containerSinks, childrenSinks]))
   const sinkNames = getSinkNamesFromSinksArray(allSinks)
@@ -468,7 +468,7 @@ function computeSinksWithPerSinkStrategy(mergeSinks, componentTree, extendedSour
     computeReducedSink(containerSinks, childrenSinks, localSettings, mergeSinks),
     {}, sinkNames
   );
-  console.trace(`Computed reduced sinks`);
+  console.debug(`Computed reduced sinks`);
   console.groupEnd()
 
   return reducedSinks

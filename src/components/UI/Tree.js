@@ -2,10 +2,12 @@ import { assertContract } from "../../../contracts/src"
 import { InjectCircularSources } from "../Inject/InjectCircularSources"
 import { InjectSourcesAndSettings } from "../.."
 import { ForEach } from "../ForEach"
-import { isNil, T, times } from 'ramda'
+import { isNil, T, times, mergeAll, merge, set } from 'ramda'
 import { PATH_ROOT } from "../../../tracing/src/properties"
-import { BFS, postOrderTraverseTree, } from 'fp-rosetree'
+import { BFS, postOrderTraverseTree, reduceTree} from 'fp-rosetree'
 import { m } from "../m"
+import { combinatorNameInSettings } from "../../../tracing/src/helpers"
+import { isAdvised, removeAdvice } from "../../../utils/src"
 
 const stringify = path => path.join(".");
 // TODO
@@ -15,22 +17,27 @@ const displayTreeSpecs = {
   computeSinks: computeTreeSinks,
 };
 
-function computeTreeSinks(parentComponent, childrenComponents, sources, settings){
+function computeTreeSinks(parentComponent, _childrenComponents, sources, settings){
   // NOTE : here parentComponent is null by definition
-  const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = childrenComponents;
+  const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = _childrenComponents;
+  // NOTE : as those components are leaves in the component tree, they are advised automatically, so unadvise them
+  // not to falsify the auto-generated location path in the component tree
+  const childrenComponents = _childrenComponents.map(childComponent => isAdvised(childComponent)
+    ? removeAdvice(childComponent)
+    : childComponent);
   const { treeSettings } = settings;
-  const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode, localCommandSpecs, lenses, sinkNames } = treeSettings;
+  const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode, localCommandSpecs, lenses } = treeSettings;
   // yeah I know, double indirection
   const tree = settings[localTreeSetting];
 
   if (isNil(tree)) {
-    return TreeEmpty(sources, settings)
+    return m({}, set(combinatorNameInSettings, 'DisplayTree|Inner', {}), [TreeEmpty])(sources, settings)
   }
   else {
     // traverse the tree to build the displaying component
     const pathMap = postOrderTraverseTree(
       lenses,
-      { seed: () => Map, visit: buildDisplayTreeComponentFrom(lenses, childrenComponents) },
+      { seed: () => Map, visit: buildDisplayTreeComponentFrom(lenses, childrenComponents, settings) },
       tree
     );
     const displayTreeComponent = pathMap.get(stringify(PATH_ROOT));
@@ -39,13 +46,12 @@ function computeTreeSinks(parentComponent, childrenComponents, sources, settings
     // Actually the root has already been dealt with as a regular node. This gives an opportunity to wrap the
     // component up as necessary (in additional to convenient html wrapping tags, `TreeRoot` could also gather event
     // handling for all nodes)
-    // TODO : check the tracing too, might have to unadvise stuff
-    return m({}, {}, [TreeRoot, [displayTreeComponent]])(sources, settings)
+    return m({}, set(combinatorNameInSettings, 'DisplayTree|Inner', {}), [TreeRoot, [displayTreeComponent]])(sources, settings)
   }
 
 }
 
-function buildDisplayTreeComponentFrom(lenses, componentTree) {
+function buildDisplayTreeComponentFrom(lenses, componentTree, settings) {
   const { getChildren, getLabel } = lenses;
   const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = componentTree;
 
@@ -58,8 +64,8 @@ function buildDisplayTreeComponentFrom(lenses, componentTree) {
       getChildrenNumber(tree, traversalState)
     );
     const mappedTree = (mappedChildren.length === 0)
-      ? m({}, { path, label }, [TreeLeaf])
-      : m({}, { path, label }, [TreeNode, mappedChildren])
+      ? m({}, set(combinatorNameInSettings, 'DisplayTree|Inner|Leaf', { path, label }), [TreeLeaf])
+      : m({}, set(combinatorNameInSettings, 'DisplayTree|Inner|Node', { path, label }), [TreeNode, mappedChildren])
     ;
 
     pathMap.set(stringify(path), mappedTree);
@@ -69,41 +75,47 @@ function buildDisplayTreeComponentFrom(lenses, componentTree) {
 }
 
 function uiStateFactoryWith(treeSettings, injectedBehaviourName) {
-  const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode: initState, localCommandSpecs, lenses, sinkNames } = treeSettings;
+  const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode: initState, localCommandSpecs, lenses } = treeSettings;
 
   return function computeUIstate(sources, settings) {
-    const treeSource$ = sources[treeSource];
+    const treeSource$ = sources[treeSource].tap(x => {debugger; console.log(`${treeSource}:`, x)});
     const injectedBehaviour$ = sources[injectedBehaviourName];
 
     return {
-      [localStateSource]: treeSource$.withLatestFrom(injectedBehaviour$, (tree, uiState) => {
+      [localStateSource]: treeSource$.withLatestFrom(injectedBehaviour$, (newTree, currentUIstate) => {
         // We need to ensure the invariant that for every node of the tree there is a corresponding ui state
         // That basically consists in, for every node of the tree for which we don't have a matching ui state, create a
         // default one
         const newUIstate = reduceTree(lenses, {
           strategy: BFS,
-          seed: uiState,
-          visit: createMissingUIstateFrom(initState)
-        }, tree);
+          // NOTE : cloning the current UI state as we are going to mutate in place when traversing
+          seed: () => function cloneMap() { return new Map(currentUIstate)},
+          visit: function createMissingUIstate(uiState, traversalState, tree) {
+            const { path } = traversalState.get(tree);
+            const strPath = stringify(path);
 
+            // update the dependent parts while making sure default values are set
+            uiState.set(strPath, mergeAll([initState, uiState.get(strPath) || {}, { tree }]));
+            return uiState
+          }
+        }, newTree)
+
+        debugger
         return newUIstate
-      })
+      }).shareReplay(1)
     }
   }
 }
 
-function createMissingUIstateFrom(defaultUIstateNode) {
-  return function createMissingUIstate(uiState, traversalState, tree) {
-    const { path } = traversalState.get(tree);
-    const strPath = stringify(path);
-
-    // update the dependent parts while making sure default values are set
-    uiState.set(strPath, mergeAll([defaultUIstateNode, uiState.get(strPath) || {}, { tree }]));
-  }
-}
-
 function DisplayTree(displayTreeSettings, componentTree) {
-  return m(displayTreeSpecs, {}, componentTree)
+  // !! dragons !!
+  // To have proper path in component tree, we need to use [TreeRoot, [...]] instead of [TreeEmpty,...]
+  // TODO : check it
+  // DOC: this is because this `m` call is traced with TreeRoot not a container component hence it gets the path 1
+  // instaed of 0
+  // TODO : one alternative could be to pass componentTree in settings (in that case not propagate it down) or closure
+  // try to use directly a function (sources, settings) which applies directly displayTreeSpecs.computeSinks
+  return m(displayTreeSpecs, set(combinatorNameInSettings, 'DisplayTree', {}), componentTree)
 }
 
 export function Tree(_treeSettings, arrayComponents) {
@@ -116,7 +128,7 @@ export function Tree(_treeSettings, arrayComponents) {
   const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = arrayComponents;
   const { source: localCommandSource, executeFn } = localCommandSpecs;
 
-  const initialUserInterfaceState = new Map();
+  const initialUserInterfaceState = () => Map;
   const injectedBehaviourName = 'B$' + localStateSource;
   const injectedBehaviour = [injectedBehaviourName, initialUserInterfaceState];
   const injectedEvent = [localCommandSource, executeFn];
@@ -139,5 +151,3 @@ export function Tree(_treeSettings, arrayComponents) {
   // TODO : Remove from the passed settings the one I don't need (tree source etc.)
   return component
 }
-
-

@@ -41,7 +41,6 @@ function computeSinks(parentComponent, childrenComponents, sources, settings) {
         // exttra logs and wrong indices
         reconstructComponentTree(parentComponent, childrenComponents));
 
-      // TODO : think about how to pass trace...
       cachedSinks = switchedComponent(sources, settings);
     })
     // NOTE: apparently necessary because every sink name wires at a different moment?? maybe
@@ -90,7 +89,5 @@ export function ForEach(forEachSettings, componentTree) {
   assertContract(hasAtLeastOneChildComponent, [componentTree], `ForEach : ForEach combinator must at least have one child component to switch to!`);
   assertContract(isForEachSettings, [null, forEachSettings], `ForEach : ForEach combinator must have 'from' and 'as' property which are strings!`);
 
-  // TODO : have a look at specs maybe add combinator name to the second m, or remove the trace in that m? but then
-  // that m does not have the trace/?
   return m(forEachSpec, set(combinatorNameInSettings, 'ForEach', forEachSettings), componentTree)
 }

@@ -36,7 +36,11 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
   const behaviourSourceName = injectLocalStateSettings.behaviour[0];
   const initialState = injectLocalStateSettings.behaviour[1];
   const behaviourSource = new Rx.BehaviorSubject(initialState);
-  const behaviourCache = clone(initialState);
+  // TODO : Map is not cloneable, ramda returns the same object!!
+  // TODO : also Map will not work with json patch
+  // DOC : initial state for behaviour must be object?? I need Map too!! or any constructor for that matter
+  // DOC : initialState can be constructor factory i.e. function returning constructor
+  const behaviourCache = isFunction(initialState) ? new (initialState()) : clone(initialState);
 
   const eventSourceName = injectLocalStateSettings.event[0];
   // @type function(Command) : Rx.Observable*/
@@ -48,7 +52,7 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
   function computeSinks(parentComponent, childrenComponents, sources, settings) {
     const reducedSinks = m(
       {},
-      set(combinatorNameInSettings, 'InjectLocalState|Inner', {}),
+      set(combinatorNameInSettings, 'InjectCircularSources|Inner', {}),
       reconstructComponentTree(parentComponent, childrenComponents)
     )(sources, settings);
 
@@ -61,6 +65,7 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
     // would mean that the behaviour never gets updated.
     behaviourSink && behaviourSink.subscribe(
       patchCommands => {
+        // TODO:  chamge, put a driver there too, just like events
         // NOTE : IN-PLACE update!!
         assertContract(isArrayUpdateOperations, [patchCommands], `InjectCircularSources > computeSinks > behaviourSink : must emit an array of json patch commands!`);
         jsonpatch.apply(behaviourCache, patchCommands);
@@ -124,7 +129,7 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
   // Here we chose to not have the settings inherited down the component tree, as this information is of exclusive
   // usage at this level
   const cleanedSettings = omit(['behaviour', 'event'], injectLocalStateSettings);
-  return m(injectlocalStateSpec, set(combinatorNameInSettings, 'InjectLocalState', cleanedSettings), componentTree)
+  return m(injectlocalStateSpec, set(combinatorNameInSettings, 'InjectCircularSources', cleanedSettings), componentTree)
 }
 
 /**

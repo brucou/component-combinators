@@ -16133,6 +16133,2402 @@ QUnit.test("main case - InSlot - component tree depth 2 - no container - 1 compo
     });
 });
 
+QUnit.test("main case - Combine - component tree depth 2 - repeat container - repeat component", function exec_test(assert) {
+  resetGraphCounter();
+  const done = assert.async(3);
+  const traces = [];
+
+  const App = Combine(set(componentNameInSettings, APP_NAME, SOME_SETTINGS), [ContainerComponent, [
+    Combine(set(componentNameInSettings, A_COMPONENT_NAME, {}), [ContainerComponent, [AtomicComponentApp]]),
+    Combine(SOME_MORE_SETTINGS, [ContainerComponent, [AtomicComponentApp]])
+  ]]);
+  const tracedApp = traceApp({
+    _trace: {
+      traceSpecs: {
+        [A_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        [ANOTHER_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        // NOTE : no need to trace the DOM source here as `AtomicComponentApp` does not use DOM source
+        [DOM_SINK]: [identity, traceDOMsinkFn]
+      },
+      sendMessage: msg => traces.push(msg)
+    },
+    _helpers: { getId: getId(0) }
+  }, App);
+
+  const inputs = [
+    { [A_DRIVER]: { diagram: '-a--b--' } },
+    { [ANOTHER_DRIVER]: { diagram: '-A--B--' } },
+  ];
+
+  const expectedMessages = {
+    [A_DRIVER]: {
+      outputs:[
+        "driver1 emits: a",
+        "driver1 emits: a",
+        "driver1 emits: b",
+        "driver1 emits: b"
+      ],
+      successMessage: `sink ${A_DRIVER} produces the expected values`
+    },
+    [DOM_SINK]: {
+      outputs: [
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: a</div></div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div></div>",
+        "<div><iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe><div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits: B</div></div></div></div>"
+      ],
+      successMessage: `sink ${DOM_SINK} produces the expected values`,
+      transform: pipe(convertVNodesToHTML)
+    },
+  };
+
+  const expectedGraph = [
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "id": 0,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "id": 1,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "id": 2,
+      "isContainerComponent": true,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "id": 3,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "id": 4,
+      "isContainerComponent": true,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "id": 5,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "id": 6,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "id": 7,
+      "isContainerComponent": true,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        2,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "id": 8,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+  ];
+  const expectedTraces = [
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"></div>"
+        },
+        "type": 1
+      },
+      "id": 0,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"></div>"
+        },
+        "type": 1
+      },
+      "id": 1,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"></div>"
+        },
+        "type": 1
+      },
+      "id": 2,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "error": undefined,
+          "kind": "C"
+        },
+        "type": 1
+      },
+      "id": 3,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "error": undefined,
+          "kind": "C"
+        },
+        "type": 1
+      },
+      "id": 4,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "vLift",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "error": undefined,
+          "kind": "C"
+        },
+        "type": 1
+      },
+      "id": 5,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 6,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 7,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 8,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 9,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: a</div>"
+        },
+        "type": 1
+      },
+      "id": 10,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: a</div></div>"
+        },
+        "type": 1
+      },
+      "id": 11,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 12,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 13,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 14,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 15,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 16,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 17,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: a</div>"
+        },
+        "type": 1
+      },
+      "id": 18,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: a</div></div>"
+        },
+        "type": 1
+      },
+      "id": 19,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: a</div></div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 20,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: a</div></div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 21,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 22,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 23,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 24,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 25,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 26,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 27,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 28,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 29,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: A</div>"
+        },
+        "type": 1
+      },
+      "id": 30,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: A</div></div>"
+        },
+        "type": 1
+      },
+      "id": 31,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 32,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits: a</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 33,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 34,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 35,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: A</div>"
+        },
+        "type": 1
+      },
+      "id": 36,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: A</div></div>"
+        },
+        "type": 1
+      },
+      "id": 37,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 38,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: A</div></div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 39,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 40,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 41,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 42,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 43,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: b</div>"
+        },
+        "type": 1
+      },
+      "id": 44,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: b</div></div>"
+        },
+        "type": 1
+      },
+      "id": 45,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 46,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits: A</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 47,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 48,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 49,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 50,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 51,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 52,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 53,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: b</div>"
+        },
+        "type": 1
+      },
+      "id": 54,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: b</div></div>"
+        },
+        "type": 1
+      },
+      "id": 55,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 56,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: b</div></div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 57,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 58,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 59,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 60,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 61,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 62,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 63,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 64,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 65,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: B</div>"
+        },
+        "type": 1
+      },
+      "id": 66,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: B</div></div>"
+        },
+        "type": 1
+      },
+      "id": 67,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 68,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits: b</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 69,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 70,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 71,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ],
+      "settings": {
+        "a_setting_prop": "a_setting_prop_value",
+        "another_setting_prop": "another_setting_prop_value"
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentApp",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div>DOM_SINK emits: B</div>"
+        },
+        "type": 1
+      },
+      "id": 72,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div>DOM_SINK emits: B</div></div>"
+        },
+        "type": 1
+      },
+      "id": 73,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits: B</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 74,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "DOM",
+        "notification": {
+          "kind": "N",
+          "value": "<div class=\"container\"><div class=\"container\"><div>DOM_SINK emits: B</div></div><div class=\"container\"><div>DOM_SINK emits: B</div></div></div>"
+        },
+        "type": 1
+      },
+      "id": 75,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    }
+  ];
+
+  const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
+    tickDuration: 3,
+    waitForFinishDelay: 10,
+    analyzeTestResults: analyzeTestResults(assert, done),
+    errorHandler: function (err) {
+      done(err)
+    }
+  });
+  testResult
+    .then(_ => {
+      assert.deepEqual(removeWhenField(traces), expectedGraph.concat(expectedTraces), `Traces are produced as expected!`);
+      done()
+    });
+});
+
+QUnit.test("main case - ForEach - component tree depth 2 - 1 container - 1 component", function exec_test(assert) {
+  resetGraphCounter();
+  const done = assert.async(3);
+  const traces = [];
+  const forEachSettings = {
+    from: A_DRIVER,
+    as: FOREACH_AS,
+    sinkNames: [ANOTHER_DRIVER, DOM_SINK]
+  };
+
+  const App = Combine(set(componentNameInSettings, APP_NAME, {}), [
+    ForEach(set(componentNameInSettings, A_COMPONENT_NAME, forEachSettings), [ContainerComponent, [AtomicComponentMonoDriverApp]]),
+  ]);
+  const tracedApp = traceApp({
+    _trace: {
+      traceSpecs: {
+        [A_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        [ANOTHER_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        // NOTE : no need to trace the DOM source here as `AtomicComponentApp` does not use DOM source
+        [DOM_SINK]: [identity, traceDOMsinkFn]
+      },
+      defaultTraceSpecs: [traceEventSourceFn, traceEventSinkFn],
+      sendMessage: msg => traces.push(msg)
+    },
+    _helpers: { getId: getId(0) }
+  }, App);
+
+  const inputs = [
+    { [A_DRIVER]: { diagram: 'a-b--' } },
+    { [ANOTHER_DRIVER]: { diagram: '-A--B--' } },
+  ];
+
+  const expectedMessages = {
+    [ANOTHER_DRIVER]: {
+      outputs: inputs[1][ANOTHER_DRIVER].diagram.replace(/-/g, '').split('').map(x => `another driver emits: ${x}`),
+      successMessage: `sink ${ANOTHER_DRIVER} produces the expected values`
+    },
+    [DOM_SINK]: {
+      outputs: [],
+      successMessage: `sink ${DOM_SINK} produces the expected values`,
+      transform: pipe(convertVNodesToHTML)
+    },
+  };
+
+  // NOTE : there is no "C" notification appearing here, as the ForEach combinator sinks do not complete. Its
+  // children components are called on-demand, and their sinks do complete. However, there is no trace instruction
+  // at that level to observe it
+  // NOTE : Hence the only way to observe component 'instantiation' is through the graph structure tracing.
+  // NOTE : For ForEach we cannot observe component 'destruction'. However, we know that component destruction is right
+  // before 'instantiation'.
+  const expectedGraph1 = [
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "id": 0,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "id": 1,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "id": 2,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+  ];
+  const expectedGraph2 = [
+    {
+      "combinatorName": "ForEach|Inner",
+      "componentName": "a_component_name",
+      "id": 3,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentMonoDriverApp",
+      "id": 4,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+  ];
+  const expectedGraph3 = [
+    {
+      "combinatorName": "ForEach|Inner",
+      "componentName": "a_component_name",
+      "id": 5,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentMonoDriverApp",
+      "id": 6,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+  ];
+  const expectedTraces1 = [
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 0,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 1,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 2,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+  ];
+  const expectedTraces2 = [
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 3,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 4,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 5,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+    {
+      "combinatorName": "ForEach|Inner",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 6,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "foreach_as": "a",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentMonoDriverApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "A"
+        },
+        "type": 0
+      },
+      "id": 7,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "foreach_as": "a",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentMonoDriverApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: A"
+        },
+        "type": 1
+      },
+      "id": 8,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "ForEach|Inner",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: A"
+        },
+        "type": 1
+      },
+      "id": 9,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: A"
+        },
+        "type": 1
+      },
+      "id": 10,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: A"
+        },
+        "type": 1
+      },
+      "id": 11,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: A"
+        },
+        "type": 1
+      },
+      "id": 12,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 13,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 14,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 15,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+  ];
+  const expectedTraces3 = [
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 16,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 17,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 18,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+    {
+      "combinatorName": "ForEach|Inner",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 19,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "foreach_as": "b",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentMonoDriverApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "B"
+        },
+        "type": 0
+      },
+      "id": 20,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "settings": {
+        "as": "foreach_as",
+        "foreach_as": "b",
+        "from": "a_driver",
+        "sinkNames": [
+          "another_driver",
+          "DOM"
+        ]
+      }
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "AtomicComponentMonoDriverApp",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: B"
+        },
+        "type": 1
+      },
+      "id": 21,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "ForEach|Inner",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: B"
+        },
+        "type": 1
+      },
+      "id": 22,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "ForEach",
+      "componentName": "a_component_name",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: B"
+        },
+        "type": 1
+      },
+      "id": 23,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: B"
+        },
+        "type": 1
+      },
+      "id": 24,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "another driver emits: B"
+        },
+        "type": 1
+      },
+      "id": 25,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    }
+  ];
+
+  const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
+    tickDuration: 3,
+    waitForFinishDelay: 10,
+    analyzeTestResults: analyzeTestResults(assert, done),
+    errorHandler: function (err) {
+      done(err)
+    }
+  });
+  testResult
+    .then(_ => {
+      assert.deepEqual(
+        removeWhenField(traces),
+        flatten([expectedGraph1, expectedTraces1, expectedGraph2, expectedTraces2, expectedGraph3, expectedTraces3]),
+        `Traces are produced as expected!`);
+      done()
+    });
+});
+
 // TODO : also test for errors occuring in the component tree
 // component do not complete per se, so hard to test completion
 // TODO : test also Switch with container having slot!!!
