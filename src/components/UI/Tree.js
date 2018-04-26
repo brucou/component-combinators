@@ -47,7 +47,6 @@ function uiStateFactoryWith(injectedBehaviourName) {
       // We need to ensure the invariant that for every node of the tree there is a corresponding ui state
       // That basically consists in, for every node of the tree for which we don't have a matching ui state, create a
       // default one
-      debugger
       const newUIstate = reduceTree(lenses, {
         strategy: BFS,
         // NOTE : cloning the current UI state as we are going to mutate in place when traversing

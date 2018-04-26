@@ -34,6 +34,7 @@ import { InjectCircularSources } from "../src/components/Inject/InjectCircularSo
 import { omit, pipe, set } from 'ramda'
 import Rx from 'rx'
 import { markAsEvent } from "../src"
+import * as jsonpatch from "fast-json-patch"
 
 const $ = Rx.Observable;
 const AN_ERROR = `AN_ERROR`;
@@ -96,9 +97,7 @@ function commandProcessingFnWithThrowingStream(command) {
 
 function behaviourUpdatingComponent(sources, settings) {
   return {
-    [A_CIRCULAR_BEHAVIOR_SOURCE]: markAsEvent(
-      sources[A_DRIVER].map(_ => opsOnInitialModel)
-    )
+    [A_CIRCULAR_BEHAVIOR_SOURCE]: sources[A_DRIVER].map(_ => opsOnInitialModel)
   }
 }
 
@@ -155,16 +154,21 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectLocalStateSettings*/
-    // TODO : make it without mutability
-  const processJsonPatchCommands = (patchCommands, currValue) => jsonpatch.apply(currValue, patchCommands);
+
+  const processJsonPatchCommands =
+    (patchCommands, currValue) => jsonpatch.applyPatch(currValue, patchCommands).newDocument;
   const injectSettings = {
     behaviour: {
       behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
       processingBehaviourFn: processJsonPatchCommands,
-      initialBehaviorValue: INITIAL_STATE
+      initialBehaviorValue: INITIAL_STATE,
+      finalizeBehaviourSource: () => {}
     },
-    event: { eventSourceName: A_CIRCULAR_EVENT_SOURCE, processingEventFn: commandProcessingFnOneResult }
+    event: {
+      eventSourceName: A_CIRCULAR_EVENT_SOURCE,
+      processingEventFn: commandProcessingFnOneResult,
+      finalizeEventSource: () => {}
+    }
   };
 
   const App = InjectCircularSources(set(componentNameInSettings, APP_NAME, injectSettings), [
@@ -200,7 +204,11 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       successMessage: `sink ${A_DRIVER} produces the expected values`
     },
     [ANOTHER_DRIVER]: {
-      outputs: ["circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"],
+      outputs:
+        [
+          "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}",
+          "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        ],
       successMessage: `sink ${ANOTHER_DRIVER} produces the expected values`
     },
     [YET_ANOTHER_DRIVER]: {
@@ -233,7 +241,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "id": 1,
       "isContainerComponent": false,
@@ -244,7 +252,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "id": 2,
       "isContainerComponent": false,
@@ -306,36 +314,39 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
   ];
-  const expectedTraces = [
-    {
-      "combinatorName": "InjectLocalState",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_behavior_source",
-        "notification": {
-          "kind": "N",
-          "value": {
-            "key": "value"
-          }
-        },
-        "type": 0
+  const expectedTraces = [{
+    "combinatorName": "InjectCircularSources",
+    "componentName": "App",
+    "emits": {
+      "identifier": "a_circular_behavior_source",
+      "notification": {
+        "kind": "N",
+        "value": {
+          "dummyKey1InitModel": "dummy2",
+          "dummyKey3InitModel": "dummy3",
+          "key": "value"
+        }
       },
-      "id": 0,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
+      "type": 0
     },
+    "id": 0,
+    "logType": "runtime",
+    "path": [
+      0,
+      0
+    ],
+    "settings": {}
+  },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -357,6 +368,8 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -379,6 +392,8 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -434,7 +449,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -452,7 +467,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -505,7 +520,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -524,7 +539,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -653,7 +668,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -686,7 +701,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -709,7 +724,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -820,7 +835,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -838,7 +853,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -941,7 +956,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -963,7 +978,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -989,7 +1004,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -1109,7 +1124,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -1127,7 +1142,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -1162,177 +1177,6 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 39,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": "InjectLocalState|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 40,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 41,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "sinkUpdatingComponent",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 42,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        2
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "sinkUpdatingComponent",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 43,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        2
-      ]
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 44,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectLocalState|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 45,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectLocalState",
-      "componentName": "App",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 46,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "ROOT",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 47,
-      "logType": "runtime",
-      "path": [
-        0
-      ]
-    },
-    {
       "combinatorName": undefined,
       "componentName": "sinkUpdatingComponent",
       "emits": {
@@ -1343,7 +1187,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 0
       },
-      "id": 48,
+      "id": 39,
       "logType": "runtime",
       "path": [
         0,
@@ -1364,7 +1208,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 49,
+      "id": 40,
       "logType": "runtime",
       "path": [
         0,
@@ -1384,7 +1228,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 50,
+      "id": 41,
       "logType": "runtime",
       "path": [
         0,
@@ -1393,7 +1237,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -1403,7 +1247,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 51,
+      "id": 42,
       "logType": "runtime",
       "path": [
         0,
@@ -1411,13 +1255,229 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
         "notification": {
           "kind": "N",
           "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 43,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 44,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 45,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 46,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 47,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 48,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "behaviourUpdatingComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 49,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "behaviourUpdatingComponent",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "kind": "N",
+          "value": [
+            {
+              "op": "add",
+              "path": "/dummyKey3InitModel",
+              "value": "dummy3"
+            },
+            {
+              "op": "replace",
+              "path": "/dummyKey1InitModel",
+              "value": "dummy2"
+            },
+            {
+              "op": "remove",
+              "path": "/dummyKey2InitModel"
+            }
+          ]
+        },
+        "type": 1
+      },
+      "id": 50,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "kind": "N",
+          "value": [
+            {
+              "op": "add",
+              "path": "/dummyKey3InitModel",
+              "value": "dummy3"
+            },
+            {
+              "op": "replace",
+              "path": "/dummyKey1InitModel",
+              "value": "dummy2"
+            },
+            {
+              "op": "remove",
+              "path": "/dummyKey2InitModel"
+            }
+          ]
+        },
+        "type": 1
+      },
+      "id": 51,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "kind": "N",
+          "value": [
+            {
+              "op": "add",
+              "path": "/dummyKey3InitModel",
+              "value": "dummy3"
+            },
+            {
+              "op": "replace",
+              "path": "/dummyKey1InitModel",
+              "value": "dummy2"
+            },
+            {
+              "op": "remove",
+              "path": "/dummyKey2InitModel"
+            }
+          ]
         },
         "type": 1
       },
@@ -1429,48 +1489,63 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "ROOT",
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_behavior_source",
         "notification": {
           "kind": "N",
-          "value": "driver1 emits: a"
+          "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
+            "key": "value"
+          }
         },
-        "type": 1
+        "type": 0
       },
       "id": 53,
       "logType": "runtime",
       "path": [
+        0,
         0
-      ]
+      ],
+      "settings": {}
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "ROOT",
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_behavior_source",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
+            "key": "value"
+          }
         },
         "type": 0
       },
       "id": 54,
       "logType": "runtime",
       "path": [
+        0,
         0
       ],
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
-      "componentName": "App",
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_behavior_source",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
+            "key": "value"
+          }
         },
         "type": 0
       },
@@ -1478,18 +1553,23 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "logType": "runtime",
       "path": [
         0,
+        0,
         0
       ],
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
-      "componentName": "App",
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_behavior_source",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
+            "key": "value"
+          }
         },
         "type": 0
       },
@@ -1497,74 +1577,59 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "logType": "runtime",
       "path": [
         0,
-        0
+        0,
+        0,
+        2
       ],
       "settings": {}
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "yet_another_driver",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
         },
-        "type": 0
+        "type": 1
       },
       "id": 57,
       "logType": "runtime",
       "path": [
         0,
         0,
-        0
-      ],
-      "settings": {}
+        0,
+        2
+      ]
     },
     {
-      "combinatorName": undefined,
-      "componentName": "behaviourUpdatingComponent",
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "yet_another_driver",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
         },
-        "type": 0
+        "type": 1
       },
       "id": 58,
       "logType": "runtime",
       "path": [
         0,
         0,
-        0,
         0
-      ],
-      "settings": {}
+      ]
     },
     {
-      "combinatorName": undefined,
-      "componentName": "behaviourUpdatingComponent",
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
       "emits": {
-        "identifier": "a_circular_behavior_source",
+        "identifier": "yet_another_driver",
         "notification": {
           "kind": "N",
-          "value": [
-            {
-              "op": "add",
-              "path": "/dummyKey3InitModel",
-              "value": "dummy3"
-            },
-            {
-              "op": "replace",
-              "path": "/dummyKey1InitModel",
-              "value": "dummy2"
-            },
-            {
-              "op": "remove",
-              "path": "/dummyKey2InitModel"
-            }
-          ]
+          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
         },
         "type": 1
       },
@@ -1572,242 +1637,21 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       "logType": "runtime",
       "path": [
         0,
-        0,
-        0,
         0
       ]
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
       "emits": {
-        "identifier": "a_circular_behavior_source",
+        "identifier": "yet_another_driver",
         "notification": {
           "kind": "N",
-          "value": [
-            {
-              "op": "add",
-              "path": "/dummyKey3InitModel",
-              "value": "dummy3"
-            },
-            {
-              "op": "replace",
-              "path": "/dummyKey1InitModel",
-              "value": "dummy2"
-            },
-            {
-              "op": "remove",
-              "path": "/dummyKey2InitModel"
-            }
-          ]
+          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
         },
         "type": 1
       },
       "id": 60,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectLocalState|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_behavior_source",
-        "notification": {
-          "kind": "N",
-          "value": [
-            {
-              "op": "add",
-              "path": "/dummyKey3InitModel",
-              "value": "dummy3"
-            },
-            {
-              "op": "replace",
-              "path": "/dummyKey1InitModel",
-              "value": "dummy2"
-            },
-            {
-              "op": "remove",
-              "path": "/dummyKey2InitModel"
-            }
-          ]
-        },
-        "type": 1
-      },
-      "id": 61,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectLocalState",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_behavior_source",
-        "notification": {
-          "kind": "N",
-          "value": {
-            "dummyKey1InitModel": "dummy2",
-            "dummyKey3InitModel": "dummy3",
-            "key": "value"
-          }
-        },
-        "type": 0
-      },
-      "id": 62,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": "InjectLocalState|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_behavior_source",
-        "notification": {
-          "kind": "N",
-          "value": {
-            "dummyKey1InitModel": "dummy2",
-            "dummyKey3InitModel": "dummy3",
-            "key": "value"
-          }
-        },
-        "type": 0
-      },
-      "id": 63,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
-      "emits": {
-        "identifier": "a_circular_behavior_source",
-        "notification": {
-          "kind": "N",
-          "value": {
-            "dummyKey1InitModel": "dummy2",
-            "dummyKey3InitModel": "dummy3",
-            "key": "value"
-          }
-        },
-        "type": 0
-      },
-      "id": 64,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "sinkUpdatingComponent",
-      "emits": {
-        "identifier": "a_circular_behavior_source",
-        "notification": {
-          "kind": "N",
-          "value": {
-            "dummyKey1InitModel": "dummy2",
-            "dummyKey3InitModel": "dummy3",
-            "key": "value"
-          }
-        },
-        "type": 0
-      },
-      "id": 65,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        2
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "sinkUpdatingComponent",
-      "emits": {
-        "identifier": "yet_another_driver",
-        "notification": {
-          "kind": "N",
-          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
-        },
-        "type": 1
-      },
-      "id": 66,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        2
-      ]
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
-      "emits": {
-        "identifier": "yet_another_driver",
-        "notification": {
-          "kind": "N",
-          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
-        },
-        "type": 1
-      },
-      "id": 67,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectLocalState|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "yet_another_driver",
-        "notification": {
-          "kind": "N",
-          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
-        },
-        "type": 1
-      },
-      "id": 68,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectLocalState",
-      "componentName": "App",
-      "emits": {
-        "identifier": "yet_another_driver",
-        "notification": {
-          "kind": "N",
-          "value": "circular behaviour emits: {\"key\":\"value\",\"dummyKey3InitModel\":\"dummy3\",\"dummyKey1InitModel\":\"dummy2\"}"
-        },
-        "type": 1
-      },
-      "id": 69,
       "logType": "runtime",
       "path": [
         0,
@@ -1825,7 +1669,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 70,
+      "id": 61,
       "logType": "runtime",
       "path": [
         0
@@ -1842,7 +1686,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 0
       },
-      "id": 71,
+      "id": 62,
       "logType": "runtime",
       "path": [
         0,
@@ -1867,7 +1711,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 72,
+      "id": 63,
       "logType": "runtime",
       "path": [
         0,
@@ -1891,7 +1735,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 73,
+      "id": 64,
       "logType": "runtime",
       "path": [
         0,
@@ -1900,7 +1744,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -1914,10 +1758,209 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
         },
         "type": 1
       },
-      "id": 74,
+      "id": 65,
       "logType": "runtime",
       "path": [
         0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 66,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 67,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 68,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 69,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 70,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 71,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 72,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 73,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 74,
+      "logType": "runtime",
+      "path": [
         0
       ]
     },
@@ -1982,7 +2025,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -2000,7 +2043,7 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -2055,7 +2098,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectLocalStateSettings*/
+  /** @type InjectCircularSourcesSettings*/
     // TODO : make it without mutability
   const processJsonPatchCommands = (patchCommands, currValue) => jsonpatch.apply(currValue, patchCommands);
   const injectSettings = {
@@ -2133,7 +2176,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "id": 1,
       "isContainerComponent": false,
@@ -2144,7 +2187,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "id": 2,
       "isContainerComponent": false,
@@ -2208,7 +2251,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
   ];
   const expectedTraces = [
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -2229,7 +2272,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -2334,7 +2377,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -2352,7 +2395,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -2405,7 +2448,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -2424,7 +2467,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -2553,7 +2596,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -2586,7 +2629,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -2609,7 +2652,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -2720,7 +2763,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -2738,7 +2781,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -2841,7 +2884,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -2863,7 +2906,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -2889,7 +2932,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -3009,7 +3052,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -3027,7 +3070,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -3062,7 +3105,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -3081,7 +3124,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -3180,7 +3223,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -3198,7 +3241,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -3293,7 +3336,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -3311,7 +3354,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -3364,7 +3407,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -3383,7 +3426,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -3512,7 +3555,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -3545,7 +3588,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -3568,7 +3611,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -3679,7 +3722,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -3697,7 +3740,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -3800,7 +3843,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -3882,7 +3925,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -3900,7 +3943,7 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -3958,7 +4001,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectLocalStateSettings*/
+  /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
     behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
     event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnOneResult]
@@ -4031,7 +4074,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "id": 1,
       "isContainerComponent": false,
@@ -4042,7 +4085,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "id": 2,
       "isContainerComponent": false,
@@ -4106,7 +4149,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
   ];
   const expectedTraces = [
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -4127,7 +4170,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -4232,7 +4275,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -4250,7 +4293,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -4303,7 +4346,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -4322,7 +4365,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -4451,7 +4494,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -4484,7 +4527,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -4507,7 +4550,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -4618,7 +4661,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -4636,7 +4679,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -4731,7 +4774,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -4809,7 +4852,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -4827,7 +4870,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -4880,7 +4923,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -4899,7 +4942,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -5028,7 +5071,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -5061,7 +5104,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -5084,7 +5127,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -5195,7 +5238,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -5213,7 +5256,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -5308,7 +5351,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -5326,7 +5369,7 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -5384,7 +5427,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectLocalStateSettings*/
+  /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
     behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
     event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnOneResult]
@@ -5454,7 +5497,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "id": 1,
       "isContainerComponent": false,
@@ -5465,7 +5508,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "id": 2,
       "isContainerComponent": false,
@@ -5529,7 +5572,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
   ];
   const expectedTraces = [
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -5550,7 +5593,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -5655,7 +5698,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -5673,7 +5716,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -5726,7 +5769,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -5745,7 +5788,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -5844,7 +5887,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -5930,7 +5973,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -5952,7 +5995,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -5978,7 +6021,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -6098,7 +6141,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -6116,7 +6159,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -6151,7 +6194,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -6170,7 +6213,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -6269,7 +6312,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -6287,7 +6330,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -6382,7 +6425,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -6400,7 +6443,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -6453,7 +6496,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -6472,7 +6515,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -6579,7 +6622,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -6661,7 +6704,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -6679,7 +6722,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -6734,7 +6777,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectLocalStateSettings*/
+  /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
     behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
     event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnWithError]
@@ -6806,7 +6849,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "id": 1,
       "isContainerComponent": false,
@@ -6817,7 +6860,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "id": 2,
       "isContainerComponent": false,
@@ -6881,7 +6924,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
   ];
   const expectedTraces = [
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -6902,7 +6945,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -7007,7 +7050,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -7025,7 +7068,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -7078,7 +7121,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -7097,7 +7140,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -7226,7 +7269,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -7259,7 +7302,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -7282,7 +7325,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -7393,7 +7436,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -7411,7 +7454,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -7514,7 +7557,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -7536,7 +7579,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -7555,7 +7598,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -7654,7 +7697,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -7672,7 +7715,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -7767,7 +7810,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -7785,7 +7828,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -7838,7 +7881,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -7857,7 +7900,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -7986,7 +8029,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8019,7 +8062,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8042,7 +8085,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8153,7 +8196,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -8171,7 +8214,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -8274,7 +8317,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -8356,7 +8399,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -8374,7 +8417,7 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -8429,7 +8472,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectLocalStateSettings*/
+  /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
     behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
     event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnWithThrowingStream]
@@ -8501,7 +8544,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "id": 1,
       "isContainerComponent": false,
@@ -8512,7 +8555,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "id": 2,
       "isContainerComponent": false,
@@ -8576,7 +8619,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
   ];
   const expectedTraces = [
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8597,7 +8640,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8702,7 +8745,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -8720,7 +8763,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -8773,7 +8816,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -8792,7 +8835,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -8921,7 +8964,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8954,7 +8997,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -8977,7 +9020,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -9088,7 +9131,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -9106,7 +9149,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -9209,7 +9252,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -9231,7 +9274,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -9250,7 +9293,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -9349,7 +9392,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -9367,7 +9410,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "another_driver",
@@ -9462,7 +9505,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -9480,7 +9523,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -9533,7 +9576,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -9552,7 +9595,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -9681,7 +9724,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -9714,7 +9757,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -9737,7 +9780,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       "settings": {}
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_behavior_source",
@@ -9848,7 +9891,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -9866,7 +9909,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "yet_another_driver",
@@ -9969,7 +10012,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_circular_event_source",
@@ -10051,7 +10094,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState|Inner",
+      "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",
@@ -10069,7 +10112,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
       ]
     },
     {
-      "combinatorName": "InjectLocalState",
+      "combinatorName": "InjectCircularSources",
       "componentName": "App",
       "emits": {
         "identifier": "a_driver",

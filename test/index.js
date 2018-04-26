@@ -12,11 +12,11 @@ import * as QUnit from 'qunitjs';
 // import './Pipe.specs'
 // import './mockDomainQuery.specs'
 // import './trace.specs'
-import './trace.tree.specs'
+// import './trace.tree.specs'
 // import './trace.switch.specs' // BIG file
 // import './trace.router.specs'
-// import './trace.inject.cycle.specs'
-import './TreeComponent.specs'
+import './trace.inject.cycle.specs'
+// import './TreeComponent.specs'
 
 QUnit.dump.maxDepth = 200;
 window.$ = window.jQuery = require('jquery');
