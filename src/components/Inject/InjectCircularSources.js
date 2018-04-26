@@ -1,21 +1,26 @@
 import { m } from "../m/m"
 import { clone, complement, isNil, omit, pick, set, tryCatch } from 'ramda'
 import { assertContract, isFunction, isOptional, isRecordE, isString } from "../../../contracts/src"
-import * as jsonpatch from "fast-json-patch"
 import { EVENT_TYPE } from "../../../tracing/src/properties"
 import Rx from "rx"
 import { combinatorNameInSettings, reconstructComponentTree } from "../../../tracing/src/helpers"
-import { BEHAVIOUR_TYPE, isArrayUpdateOperations, markAsBehavior, markAsEvent } from "../types"
+import { noop } from "../../../utils/src"
 
 const $ = Rx.Observable
 const injectLocalStateSettingsError = `InjectLocalState : Invalid settings !`
 const isInjectLocalStateSettings = isRecordE({
-  behaviour: isOptional(isRecordE({ 0: isString, 1: complement(isNil) })),
-  event: isOptional(isRecordE([isString, isFunction]))
+  behaviour: isOptional(isRecordE({ behaviourSourceName: isString, processingBehaviourFn: isFunction, initialBehaviorValue: complement(isNil), finalizeBehaviourSource: isFunction })),
+  event: isOptional(isRecordE({eventSourceName : isString, processingEventFn : isFunction, finalizeEventSource :isFunction}))
 });
 
 /**
- * @typedef {{behaviour : [string, *], event : [string, Function]}} InjectLocalStateSettings
+ * @typedef {{behaviourSourceName: String, processingBehaviourFn: Function, initialBehaviorValue: *, finalizeBehaviourSource?: Function}} BehaviourConfig
+ */
+/**
+ * @typedef {{eventSourceName : String, processingEventFn : Function, finalizeEventSource :Function}} EventConfig
+ */
+/**
+ * @typedef {{behaviour : BehaviourConfig, event : EventConfig}} InjectLocalStateSettings
  */
 /**
  * Similar to drivers for the whole app. This allows to have an inner loop delimiting a scope
@@ -33,21 +38,15 @@ const isInjectLocalStateSettings = isRecordE({
 export function InjectCircularSources(injectLocalStateSettings, componentTree) {
   assertContract(isInjectLocalStateSettings, [injectLocalStateSettings], injectLocalStateSettingsError);
 
-  const behaviourSourceName = injectLocalStateSettings.behaviour[0];
-  const initialState = injectLocalStateSettings.behaviour[1];
-  const behaviourSource = new Rx.BehaviorSubject(initialState);
-  // TODO : Map is not cloneable, ramda returns the same object!!
-  // TODO : also Map will not work with json patch
-  // DOC : initial state for behaviour must be object?? I need Map too!! or any constructor for that matter
-  // DOC : initialState can be constructor factory i.e. function returning constructor
-  const behaviourCache = isFunction(initialState) ? new (initialState()) : clone(initialState);
+  // TODO : Map is not cloneable, ramda returns the same object!! also Map will not work with json patch
+  // DOC : initialBehaviorValue can be object or constructor factory i.e. function returning constructor
+  const {behaviourSourceName, processingBehaviourFn, initialBehaviorValue} = injectLocalStateSettings.behaviour;
+  const finalizeBehaviourSource = injectLocalStateSettings.behaviour[3] || noop;
+  let behaviourCache= isFunction(initialBehaviorValue) ? new (initialBehaviorValue()) : clone(initialBehaviorValue);
+  const behaviourSource = new Rx.BehaviorSubject(behaviourCache);
 
-  const eventSourceName = injectLocalStateSettings.event[0];
-  // @type function(Command) : Rx.Observable*/
-  const processingFn = injectLocalStateSettings.event[1];
+  const {eventSourceName, processingEventFn, finalizeEventSource} = injectLocalStateSettings.event;
   const eventSource = new Rx.Subject();
-  markAsEvent(eventSource);
-  markAsBehavior(behaviourSource);
 
   function computeSinks(parentComponent, childrenComponents, sources, settings) {
     const reducedSinks = m(
@@ -59,58 +58,84 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
     const reducedSinksWithoutCircularSinks = omit([behaviourSourceName, eventSourceName], reducedSinks);
     const reducedSinksWithOnlyCircularSinks = pick([behaviourSourceName, eventSourceName], reducedSinks);
 
-    // Process behaviour source commands (JSON Patch)
     const behaviourSink = reducedSinks[behaviourSourceName];
-    // NOTE : protecting against edge case where there is no behaviour sink computed - that could happen, though it
-    // would mean that the behaviour never gets updated.
+
+    // We subscribe the behaviour first as we give priority to state over events (events might use state, so it
+    // needs to preexist).
+    // We subscribe the behaviour **synchronously** as the initial state must precede every other events/behaviours
+    // of the related branch of the component tree. Also the behaviour update must take precedence over other
+    // behaviours update downsream.
     behaviourSink && behaviourSink.subscribe(
-      patchCommands => {
-        // TODO:  chamge, put a driver there too, just like events
-        // NOTE : IN-PLACE update!!
-        assertContract(isArrayUpdateOperations, [patchCommands], `InjectCircularSources > computeSinks > behaviourSink : must emit an array of json patch commands!`);
-        jsonpatch.apply(behaviourCache, patchCommands);
-        behaviourSource.onNext(behaviourCache)
+      command => {
+        const newBehaviourValue = tryCatch(processingBehaviourFn, processingBehaviourFnErrorHandler)(command, behaviourCache);
+        // CONTRACT : processingBehaviourFn must not mutate the value of the behaviour received, i.e. behaviourCache
+        // It could cause that different observers at the same time `n` see different values for the behaviour!!
+        // TODO NOW : add my own json update functions with ramda!!
+        // NOTE : we want the 'clock' to step forward, so we schedule the emission after all planned tasks are executed
+        // Invariant is `(state_n+1, action_n) = f(event_n, state_n)` for the active set of reactive subsystems
+        // This ensure `state_n+1` is acted upon after all the `event_n` have been processed, with `state_n` as
+        // state value. Doing otherwise might lead to some `event_n` processed with `state_n+1` value, or an
+        // action_n+1 occuring before action_n, which both violate the invariant.
+        // That is what happens for example wih infinite loops provoked by syncronous update of state which
+        // synchronously triggers another synchronous update of state.
+        // NOTE : Error might happen while computing the behaviour value. This may be intentional to signal the
+        // impossibility to compute that value. In any case, that error will be processed by the default error
+        // handler, and passed on as a normal value back in the source stream. i.e. we transform an exception into
+        // an error code, in the absence of a convenient `Maybe` type.
+        // TODO : pass an error handler in parameter?
+        // NOTE : I can also behaviourSink.observeOn(Rx.Scheduler.currentThread), but I prefer this for now for tracing
+        // cf. https://github.com/Reactive-Extensions/RxJS/blob/master/doc/api/schedulers/scheduler.md
+        const disposable = Rx.Scheduler.currentThread.schedule(
+          newBehaviourValue,
+          function emit(scheduler, x) { behaviourCache = newBehaviourValue, behaviourSource.onNext(x); }
+        );
       },
-      // This happens if an error is produced while computing state sinks. What to do?? For now, just logging
-      // The idea is to not interrupt the program with an exception, so we don't pass the error on the subject
-      // TODO : think over strategies for error handling
+      // This happens if an error is produced while computing state sinks. That should NOT happen... and should
+      // very much deserve a catastrophic exception. For now, just logging and ignoring as the idea is to not
+      // interrupt the program with an exception, so we don't pass the error on the subject
+      // TODO : think over alternative strategies for error handling
       // NOTE : on error, the behaviourSink ends, but not the behaviour source, which means other branches of the
       // component tree should continue to work
       error => console.error(`InjectCircularSources/behaviour : error!`, error),
       completed => {
         console.debug(`InjectCircularSources/behaviour : completed!`);
+        finalizeBehaviourSource(behaviourCache);
         behaviourSource.onCompleted();
       }
     );
 
     const eventSink = reducedSinks[eventSourceName];
-    // NOTE : protecting against edge case where there is no event sink computed - that could happen, it just means
-    // the component never emits commands to be executed
+    // We subscribe the event source **synchronously** as any possible initial event must precede every other
+    // events/behaviours of the related branch of the component tree. This allows to have an init event, would
+    // that be necessary, which is guaranteed to be processed before any other event in the branch of the component tree
     eventSink && eventSink.subscribe(
       command => {
-        // NOTE : there are three possibilities for error :
-        // 1. processingFn throws : that is handled by processingFnErrorHandler which processes it as in 2.
-        // 2. processingFn passes an error **notification** on its output stream : that is passed to the event source,
-        // which will not admit any further notification, i.e. the error notification is final
-        // 3. processingFn passes an error **code** through its output stream : the actual format for this error
+        // NOTE : there are two possibilities for error :
+        // 1. processingFn throws or passes an error **notification** on its output stream : that is passed to the
+        // event source, which will not admit any further notification, i.e. the error notification is final
+        // 2. processingFn passes an error **code** through its output stream : the actual format for this error
         // code will be specific to the function at hand. For instance, if processingFn is an HTTP request handler,
         // it can choose to pass HTTP errors through a specific channel, emitting {error : httpCode}. The format of
-        // the response is also left unspecified. We however think it is a good idea to include the request with the
+        // the response is also left unspecified. I however think it is a good idea to include the request with the
         // response for matching purposes.
         // NOTE : as of now (31.3.2018), on error, the event source ends, so all branches of the component tree are
         // interrupted!
-        const labelledEventResponse$ = tryCatch(processingFn, processingFnErrorHandler)(command);
-        labelledEventResponse$.subscribe(eventSource);
+        // TODO : pass an error handler in parameter?
+        const labelledEventResponse$ = tryCatch(processingEventFn, processingEventFnErrorHandler)(command);
+        labelledEventResponse$.observeOn(Rx.Scheduler.currentThread).subscribe(
+          function processEventSinkOnNext(x) {eventSource.onNext(x);},
+          function processEventSinkOnError(err) {eventSource.onError(err);},
+          function processEventSinkOnCompleted() {
+            // NOTE: DO NOT send complete notification to `eventSource`, it will complete too and won' be usable!!
+            console.debug(`InjectCircularSources > computeSinks > eventSink > command result processing > completed!`)
+          },
+        )
       },
-      // This happens if an error is produced while computing the command to execute.
-      // What to do?? For now, just logging. The idea is to not interrupt the program with an exception
-      // Passing an error through onError on the subject will stop the subject and no more messages will be sent by it!
-      // TODO : think over strategies for error handling
-      // NOTE : on error, the eventSink for that branch ends, but not the event source, which means other branches
-      // of the component tree should continue to work
+      // cf. notes for behaviour. The same applies
       error => console.error(`InjectCircularSources/event : error!`, error),
       completed => {
-        console.debug(`InjectCircularSources/event : completed!`);
+        console.debug(`InjectCircularSources > computeSinks > eventSink > completed!`)
+        finalizeEventSource();
         eventSource.onCompleted();
       }
     );
@@ -120,8 +145,6 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
 
 // Spec
   const injectlocalStateSpec = {
-    // Propagate data changes on the next tick, after all configured local state sources have been updated
-    // This means using the async scheduler from RXjs v4. Rx.Scheduler.currentThread might work too, but less clear how.
     makeLocalSources: _ => ({ [eventSourceName]: eventSource, [behaviourSourceName]: behaviourSource }),
     computeSinks: computeSinks,
   };
@@ -138,10 +161,16 @@ export function InjectCircularSources(injectLocalStateSettings, componentTree) {
  * @param {Error} err
  * @param {Command} command
  */
-function processingFnErrorHandler(err, command) {
-  console.error(`InjectCircularSources > computeSinks > behaviourSink > processingFn : error (${err}) raised while processing command`, command);
+function processingEventFnErrorHandler(err, command) {
+  console.error(`InjectCircularSources > computeSinks > eventSink > processingFn : error (${err}) raised while processing command`, command);
   return $.throw(err)
 }
+
+function processingBehaviourFnErrorHandler(err, command) {
+  console.error(`InjectCircularSources > computeSinks > behaviourSink > processingFn : error (${err}) raised while processing command`, command);
+  return err
+}
+
 
 // TODO : DOC
 // InjectCircularSources({behaviour : nameString, event : nameString})

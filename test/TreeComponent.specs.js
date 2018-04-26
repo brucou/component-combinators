@@ -4,9 +4,8 @@ import { convertVNodesToHTML, DOM_SINK } from "../utils/src"
 import { runTestScenario } from "../testing/src/runTestScenario"
 import { a, div, li, ol } from "cycle-snabbdom"
 import { Tree } from "../src/components/UI"
-import { omit, identity, pipe, set } from 'ramda'
-import { componentNameInSettings, traceApp, traceBehaviourSinkFn, traceBehaviourSourceFn } from "../tracing/src"
-import { traceDOMsinkFn, traceEventSinkFn, traceEventSourceFn } from "../tracing/src/helpers"
+import { always, evolve, is, mapObjIndexed, omit, pipe, set } from 'ramda'
+import { componentNameInSettings, resetGraphCounter } from "../tracing/src"
 
 const $ = Rx.Observable;
 
@@ -59,8 +58,26 @@ const tree2 = {
     { label: "right" },
   ]
 };
+
 function removeWhenField(traces) {
   return traces.map(trace => omit(['when'], trace))
+}
+
+function removeFunctions(traces) {
+  function mapFn(x) {
+    return typeof x === 'function' ? `function ${x.name}` : x
+  }
+
+  function mapLeafObj(obj) {
+    if (is(Object, obj) && !is(Array, obj) && !is(Function, obj)) {
+      return evolve(mapObjIndexed(always(mapLeafObj), obj), obj)
+    }
+    else {
+      return mapFn(obj)
+    }
+  }
+
+  return traces.map(mapLeafObj)
 }
 
 function getId(start) {
@@ -116,12 +133,7 @@ function TreeNodeLight(sources, settings) {
   return {
     [DOM_SINK]: $.of(
       li(".collapsed", { slot: NODE_SLOT }, [
-        a(".title.icon.icon-folder", {
-          "attrs": {
-            "tabindex": "1",
-            "unselectable": "on",
-          }
-        }, [`TreeNode@${path} : ${label}`]),
+        a(".title", {}, [`TreeNode@${path} : ${label}`]),
         ol({ slot: NODE_SLOT }, [])
       ])
     )
@@ -149,15 +161,17 @@ function TreeLeaf(sources, settings) {
 }
 
 function TreeLeafWithPrintedUIstate(sources, settings) {
-  const { LOCAL_STATE_SOURCE_NAME: uiState$ } = sources;
+  const {treeSettings : {localTreeSetting, localStateSource}} = settings;
+  const uiState$ = sources[localStateSource];
   const { path, label } = settings;
+  const tree = settings[localTreeSetting];
 
   return {
-    [DOM_SINK]: uiState$.map(uiStateMap => {
-      const uiStateToString = JSON.stringify([...uiStateMap]);
+    [DOM_SINK]: uiState$.map(uiState => {
+      const uiStateToString = JSON.stringify(uiState);
 
       return li(".collapsed", { slot: NODE_SLOT }, [
-        a(".title.icon.icon-file-empty", {}, [`TreeLeaf@${path} : ${label} | UI state : ${uiStateToString}`])
+        a(".title", {}, [`TreeLeaf@${path} : ${label} | UI state : ${uiStateToString}`])
       ])
     })
 
@@ -178,6 +192,7 @@ function analyzeTestResults(assert, done) {
 QUnit.module("Testing Tree component", {})
 
 QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
+  resetGraphCounter();
   const done = assert.async(2);
   const _treeSettings = {
     treeSettings: {
@@ -271,15 +286,11 @@ QUnit.test("Main cases - tree depth 2", function exec_test(assert) {
       done(err)
     }
   })
-
-  // const div = document.createElement('div');
-  // div.innerHTML = treeNodes.trim();
-  // document.body.appendChild(div);
 });
 
-QUnit.test("Main cases - tree depth 2, depth 1 and depth2", function exec_test(assert) {
-  const traces = [];
-  const done = assert.async(2);
+QUnit.test("Main cases - tree depth 1, depth 2 and depth1", function exec_test(assert) {
+  resetGraphCounter();
+  const done = assert.async(1);
   const _treeSettings = {
     treeSettings: {
       treeSource: TREE_SOURCE_NAME,
@@ -296,85 +307,79 @@ QUnit.test("Main cases - tree depth 2, depth 1 and depth2", function exec_test(a
 
   const treeComponent = Tree(set(componentNameInSettings, 'treeComponent', _treeSettings), arrayComponents);
 
-  const tracedApp = traceApp({
-    _trace: {
-      traceSpecs: {
-        [LOCAL_STATE_SOURCE_NAME]: [traceBehaviourSourceFn, traceBehaviourSinkFn],
-        [TREE_SOURCE_NAME]: [traceEventSourceFn, traceEventSinkFn],
-        [DOM_SINK]: [identity, traceDOMsinkFn]
-      },
-      sendMessage: msg => traces.push(msg)
-    },
-    _helpers: { getId: getId(0) }
-  }, treeComponent);
-
   const inputs = [
     {
       [TREE_SOURCE_NAME]: {
-        diagram: '-a---',
-        values: { a: tree1, b: tree2}
+        diagram: '-a-b-a',
+        values: { a: tree1, b: treeDepth2 }
       }
     },
   ];
 
-  const treeNodes = `
-  <div class="tree left inspire-tree">
-    <ol>
-        <li class="collapsed selectable draggable drop-target rendered folder">
-            <div class="title-wrap"><a class="toggle icon icon-expand"></a><a
-                    class="title icon icon-folder" tabindex="1" unselectable="on">TreeNode@0 :
-                root</a></div>
-            <div class="wholerow"></div>
-            <ol>
-                <li class="collapsed selectable draggable drop-target leaf">
-                    <div class="title-wrap"><a class="title icon icon-file-empty" tabindex="1"
-                                               unselectable="on">TreeLeaf@0,0 : left</a></div>
-                    <div class="wholerow"></div>
-                </li>
-                <li class="collapsed selectable draggable drop-target rendered folder">
-                    <div class="title-wrap"><a class="toggle icon icon-expand"></a><a
-                            class="title icon icon-folder" tabindex="1" unselectable="on">TreeNode@0,1
-                        : middle</a></div>
-                    <div class="wholerow"></div>
-                    <ol>
-                        <li class="collapsed selectable draggable drop-target leaf">
-                            <div class="title-wrap"><a class="title icon icon-file-empty"
-                                                       tabindex="1" unselectable="on">TreeLeaf@0,1,0
-                                : midleft</a></div>
-                            <div class="wholerow"></div>
-                        </li>
-                        <li class="collapsed selectable draggable drop-target leaf">
-                            <div class="title-wrap"><a class="title icon icon-file-empty"
-                                                       tabindex="1" unselectable="on">TreeLeaf@0,1,1
-                                : midright</a></div>
-                            <div class="wholerow"></div>
-                        </li>
-                    </ol>
-                </li>
-                <li class="collapsed selectable draggable drop-target leaf">
-                    <div class="title-wrap"><a class="title icon icon-file-empty" tabindex="1"
-                                               unselectable="on">TreeLeaf@0,2 : right</a></div>
-                    <div class="wholerow"></div>
-                </li>
-            </ol>
-        </li>
-    </ol>
-</div>
-  `
+  const treeNodes = [`
+    <div class="tree left inspire-tree">
+        <ol>
+            <li class="collapsed"><a class="title">TreeNode@0 : root</a>
+                <ol>
+                    <li class="collapsed"><a class="title">TreeLeaf@0,0 : left | UI state :
+                        {"0":{"isExpanded":true,"tree":{"label":"root","children":[{"label":"left"}]}},"0.0":{"isExpanded":true,"tree":{"label":"left"}}}</a>
+                    </li>
+                </ol>
+            </li>
+        </ol>
+    </div>
+`, `
+    <div class="tree left inspire-tree">
+        <ol>
+            <li class="collapsed"><a class="title">TreeNode@0 : root</a>
+                <ol>
+                    <li class="collapsed"><a class="title">TreeLeaf@0,0 : left | UI state :
+                        {"0":{"isExpanded":true,"tree":{"label":"root","children":[{"label":"left"},{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]},{"label":"right"}]}},"0.0":{"isExpanded":true,"tree":{"label":"left"}},"0.1":{"isExpanded":true,"tree":{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]}},"0.2":{"isExpanded":true,"tree":{"label":"right"}},"0.1.0":{"isExpanded":true,"tree":{"label":"midleft"}},"0.1.1":{"isExpanded":true,"tree":{"label":"midright"}}}</a>
+                    </li>
+                    <li class="collapsed"><a class="title">TreeNode@0,1 : middle</a>
+                        <ol>
+                            <li class="collapsed"><a class="title">TreeLeaf@0,1,0 : midleft | UI
+                                state :
+                                {"0":{"isExpanded":true,"tree":{"label":"root","children":[{"label":"left"},{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]},{"label":"right"}]}},"0.0":{"isExpanded":true,"tree":{"label":"left"}},"0.1":{"isExpanded":true,"tree":{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]}},"0.2":{"isExpanded":true,"tree":{"label":"right"}},"0.1.0":{"isExpanded":true,"tree":{"label":"midleft"}},"0.1.1":{"isExpanded":true,"tree":{"label":"midright"}}}</a>
+                            </li>
+                            <li class="collapsed"><a class="title">TreeLeaf@0,1,1 : midright | UI
+                                state :
+                                {"0":{"isExpanded":true,"tree":{"label":"root","children":[{"label":"left"},{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]},{"label":"right"}]}},"0.0":{"isExpanded":true,"tree":{"label":"left"}},"0.1":{"isExpanded":true,"tree":{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]}},"0.2":{"isExpanded":true,"tree":{"label":"right"}},"0.1.0":{"isExpanded":true,"tree":{"label":"midleft"}},"0.1.1":{"isExpanded":true,"tree":{"label":"midright"}}}</a>
+                            </li>
+                        </ol>
+                    </li>
+                    <li class="collapsed"><a class="title">TreeLeaf@0,2 : right | UI state :
+                        {"0":{"isExpanded":true,"tree":{"label":"root","children":[{"label":"left"},{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]},{"label":"right"}]}},"0.0":{"isExpanded":true,"tree":{"label":"left"}},"0.1":{"isExpanded":true,"tree":{"label":"middle","children":[{"label":"midleft"},{"label":"midright"}]}},"0.2":{"isExpanded":true,"tree":{"label":"right"}},"0.1.0":{"isExpanded":true,"tree":{"label":"midleft"}},"0.1.1":{"isExpanded":true,"tree":{"label":"midright"}}}</a>
+                    </li>
+                </ol>
+            </li>
+        </ol>
+    </div>
+  `, `
+    <div class="tree left inspire-tree">
+        <ol>
+            <li class="collapsed"><a class="title">TreeNode@0 : root</a>
+                <ol>
+                    <li class="collapsed"><a class="title">TreeLeaf@0,0 : left | UI state :
+                        {"0":{"isExpanded":true,"tree":{"label":"root","children":[{"label":"left"}]}},"0.0":{"isExpanded":true,"tree":{"label":"left"}}}</a>
+                    </li>
+                </ol>
+            </li>
+        </ol>
+    </div>
+  `];
+
   /** @type TestResults */
   const expected = {
     DOM: {
-      outputs: [cleanString(treeNodes)],
+      outputs: treeNodes.map(cleanString),
       successMessage: 'sink DOM produces the expected values',
       // NOTE : I need to keep an eye on the html to check the good behaviour, cannot strip the tags
       transform: pipe(convertVNodesToHTML)
     },
   }
 
-  const expectedGraph = [2];
-  const expectedTraces = [1];
-
-  const testResult = runTestScenario(inputs, expected, tracedApp, {
+  runTestScenario(inputs, expected, treeComponent, {
     tickDuration: 3,
     waitForFinishDelay: 10,
     analyzeTestResults: analyzeTestResults(assert, done),
@@ -382,17 +387,5 @@ QUnit.test("Main cases - tree depth 2, depth 1 and depth2", function exec_test(a
       done(err)
     }
   })
-  testResult
-    .then(_ => {
-      console.error('traces', traces)
-      assert.deepEqual(removeWhenField(traces), expectedGraph.concat(expectedTraces), `Traces are produced as expected!`);
-      done()
-    });
-
-  // const div = document.createElement('div');
-  // div.innerHTML = treeNodes.trim();
-  // document.body.appendChild(div);
 });
 
-// TODO : run examples and see that they still work
-// TODO : 2 main case test, cf test plan
