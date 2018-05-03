@@ -14,29 +14,18 @@ Combine (object) or InjectSettings(function, use to adapt settings). Worse case,
 # blog
 - use css from there, very nice fonts : https://elbywan.github.io/bosket/
 
+# Error handling
+Have a supervisor component which restars a branch of the tree in case of error
+- restart with what parameters???
+- impact on other branches? is that a switch? meaning time advances, so I could loose event? test!
+ 
 # Trace
 ## UI
 ### Tree component alternative
-- Have a TreeNode, TreeNodes, TreeRoot component
-- Have a Tree component so that Tree({treeSource: SourceName, uiState:Name}, [TreeEmpty, 
-TreeRoot, TreeNode, TreeLeaf])
-
-```dart
-InjectCircularSources({behaviour:..., event :...}, [
-  InjectSources(ui state -> treeSource.sample(UI_state), [
-    ForEach({treeSource, as : tree}, [
-      DisplayTree({ui state$, tree}, [
-        TreeEmpty, TreeRoot, TreeNode, TreeLeaf
-      ])
-    ])
-  ])
-])
-
-```
-
 - ui state is updated with each new tree, so that new nodes are matched to new default values in 
 UI state (not expanded, etc.) -> that behaviour should be parametrized
 - for each new tree, that is tree is visualized as f(ui state, tree)
+  - i.e. the state is (ui state, tree)
 
 - Then in the DisplayTree component
   - ex : tree = [Root, [N0, N1]]
@@ -48,26 +37,10 @@ UI state (not expanded, etc.) -> that behaviour should be parametrized
   - Ex : [Root, [N0, [N1, N2], N3]]
     - m({), [TreeRoot, [m({}, [N0]), m({}, [TreeNode, [m({}, [N1]), m({}, [N2])]]), m({}, [N3])]])
       - passing everytime the correct settings
-  - So I can get the final component by reducing the tree while traversing it
-    - this is a Postorder tree traversal : NO!
-    - if tree is empty return TreeEmpty (think about which settings)
-    - otherwise `componentArray` starts with []
-    - for each traversed node :
-      - if isNotLeaf : 
-        - branchComponent = m({some settings), [TreeNode, componentArray.map(comp=>m({some 
-        settings}, [comp]))])
-        - componentArray = [branchComponent]
-      - if isLeaf :
-        - componentArray.push(m({some settings},[TreeLeaf]))
-    - this return an array of components, and with root, an array of one component
-    - so we have our final component by taking reduce(...)[0]
 - to solve the case with expanded, preprocess the tree before computing visible component
   - visibleTree = preprocess(tree)
   - visibleComponent = process(visibleTree)
     - but be careful that the UI state tree does NOT change, and this only changes isLeaf
-- to have better DOM merge, those m({...}, {...}, [...]) could remove the wrapped div added by 
-the m(...Leaf), or try again in the default DOM to add the special case length === 1...
-  - try with the tests but also with the demo to see if in the real world there is impact
 - To handle events (coming from children nodes) properly at Tree component level :
   - inject source subject treeUIstate
   - run the reduced component
@@ -80,21 +53,13 @@ the m(...Leaf), or try again in the default DOM to add the special case length =
     automatically? I have the trace on so I can check
 
 
-New InjectLocalState improvement
-- basically adds ONE BEHAVIOUR source to all children components, which can access its current value
-- children components can modify that behaviour via an eponym sink made of JSON patch updates
-- InjectLocalState lets all the other sinks pass as usual
-- local state is updated immediately when patch update is received, implying the corresponding 
-reactive updates happen immediately. It is then important not to have another update without 
-giving back the js loop, otherwise UI will block...
-
 Pipe improvement
 - a better Pipe
   - take all the sinks apssed as source, and if not modified, passed them back to the next 
   component
   - that way I don't have to know which are the sinks to keep
   
-### Tree component
+### Tree trace component
 - Algorithm
   - logs | filter graph structure = [ComponentTree], trees are separated by runtime logs
   - ComponentTree -> initial UI_State_Tree (no selection, all expanded) -> HTML (via renderTree)
@@ -117,6 +82,7 @@ Pipe improvement
 
 # Core
 - Think if/for which operator to remove passing settings down the tree (cf. InjectCircularSources.js)
+  - ADR : keep passing settings for now to maximiuze information for tracing
 - // TODO : have versioned doc too...
 // TODO : document that mergeSinks in this version can have null as parentSinks
 // TODO : in the log analysis, be careful that path is duplicated (which is good) but messages also are

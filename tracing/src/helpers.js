@@ -89,6 +89,8 @@ export const componentNameInSettings = lensPath(['_trace', 'componentName']);
 
 export const combinatorNameInSettings = lensPath(['_trace', 'combinatorName']);
 
+export const iframeIdInTraceDef = lensPath(['_trace', 'iframeId']);
+
 /**
  * Applies a `fmap` function to the component tree, keeping the component tree data structure
  * @param {function(component:Component, isContainerComponent:Boolean, index:Number):Component} fmap

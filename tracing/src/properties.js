@@ -1,6 +1,6 @@
 export const TRACE_BOOTSTRAP_NAME = 'ROOT';
 export const IS_TRACE_ENABLED_DEFAULT = true;
-export const iframeSource = 'devtool.html';
+export const defaultIFrameId = 'devtool.html';
 export const iframeId = '#devtool';
 export const PATH_ROOT = [0];
 export const SOURCE_EMISSION = 0;

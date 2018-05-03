@@ -1,16 +1,16 @@
 import {
   combinatorNameInSettings,
   componentNameInSettings, containerFlagInSettings, deconstructTraceFromSettings, defaultTraceSinkFn,
-  defaultTraceSourceFn, getId, getIsTraceEnabled, getLeafComponentName, getPathForNthChild,
+  defaultTraceSourceFn, getId, getIsTraceEnabled, getLeafComponentName, getPathForNthChild, iframeIdInTraceDef,
   isLeafComponent, leafFlagInSettings, mapOverComponentTree, pathInSettings, traceSinks, traceSources
 } from './helpers'
 import {
-  GRAPH_STRUCTURE, iframeId, iframeSource, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME
+  GRAPH_STRUCTURE, iframeId, defaultIFrameId, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME
 } from './properties'
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
 import { iframe } from "cycle-snabbdom"
-import { pathOr, set, view } from 'ramda'
+import { pathOr, set, view, get } from 'ramda'
 import { assertContract } from "../../contracts/src"
 import { isTraceDefSpecs } from "./contracts"
 
@@ -24,15 +24,23 @@ function getGraphCounter() { return graphCounter++}
 
 export function resetGraphCounter() { graphCounter = 0}
 
-/**
- * Sends a message to the devtool iframe
- * @param {*} msg Anything which can be JSON.stringified
- */
-function sendMessage(msg) {
-  // Make sure you are sending a string, and to stringify JSON
-  // NOTE : also possible to pass a sequence of Transferable objects with the message
+export function makeIFrameMessenger(iframeId){
+  /**
+   * Sends a message to the devtool iframe
+   * @param {*} msg Anything which can be JSON.stringified
+   */
   const iframeEl = document.getElementById(iframeId);
-  iframeEl.contentWindow.postMessage(JSON.stringify(msg), '*');
+  if (!iframeEl) throw `tracing > makeIFrameMessenger > did not find an iframe with id ${iframeId}!`
+
+  const contentWindow = iframeEl.contentWindow;
+
+  function sendMessage(msg) {
+    // Make sure you are sending a string, and to stringify JSON
+    // NOTE : also possible to pass a sequence of Transferable objects with the message
+    contentWindow.postMessage(JSON.stringify(msg), '*');
+  }
+
+  return sendMessage
 }
 
 // onMessage
@@ -162,10 +170,10 @@ function postprocessOutput(sinks, settings) {
   return tracedSinks
 }
 
-const TraceIframe = vLift(
+const TraceIframe = iframeId => vLift(
   iframe(iframeId, {
     props: {
-      src: iframeSource,
+      src: iframeId || defaultIFrameId,
     },
     style: {
       width: '450px',
@@ -178,9 +186,10 @@ const adviseApp = (traceDef, App) => decorateWithAdvice({
   around: function (joinpoint, App) {
     const { args } = joinpoint;
     const [sources, settings] = args;
+    const iframeId = get(iframeIdInTraceDef, traceDef);
 
     const tracedApp = Combine({}, [
-      TraceIframe,
+      TraceIframe(iframeId),
       Combine(traceDef, [App])
     ]);
 
@@ -216,6 +225,7 @@ export function traceApp(traceDefSpecs, App) {
       isContainerComponent: pathOr(false, ['_trace', 'isContainerComponent'], traceDefSpecs),
       isLeaf: pathOr(false, ['_trace', 'isLeaf'], traceDefSpecs),
       path: pathOr([0], ['_trace', 'path'], traceDefSpecs),
+      iframeId : pathOr(defaultIFrameId, ['_trace', 'iframeId'], traceDefSpecs),
       sendMessage: pathOr(sendMessage, ['_trace', 'sendMessage'], traceDefSpecs),
       onMessage: null, // not used for now
       traceSpecs: traceDefSpecs._trace.traceSpecs,
@@ -231,29 +241,29 @@ export function traceApp(traceDefSpecs, App) {
  * @param {Component} App
  * @return Component Component whose inputs and outputs (i.e. sources and sinks) are traced
  */
-export function traceAppBasic(traceSpecs, App) {
-  // will inject _traceSpecs and _helpers (that should be merged without stomping) and _hooks (also merging as much
-  // as possible). So for now we will do it so that traceDef actually include those helpers and so on.
-  // We will think about hook overriding and composition when that problem happens
-  /** @type TraceDef*/
-  const traceDef = {
-    _hooks: { preprocessInput, postprocessOutput },
-    _helpers: { getId },
-    _trace: {
-      componentName: TRACE_BOOTSTRAP_NAME,
-      isTraceEnabled: IS_TRACE_ENABLED_DEFAULT,
-      isContainerComponent: false,
-      isLeaf: false,
-      path: [0],
-      sendMessage: sendMessage,
-      onMessage: null, // not used for now
-      traceSpecs: traceSpecs,
-      defaultTraceSpecs: [defaultTraceSourceFn, defaultTraceSinkFn]
-    }
-  };
-
-  return adviseApp(traceDef, App)
-}
+// export function traceAppBasic(traceSpecs, App) {
+//   // will inject _traceSpecs and _helpers (that should be merged without stomping) and _hooks (also merging as much
+//   // as possible). So for now we will do it so that traceDef actually include those helpers and so on.
+//   // We will think about hook overriding and composition when that problem happens
+//   /** @type TraceDef*/
+//   const traceDef = {
+//     _hooks: { preprocessInput, postprocessOutput },
+//     _helpers: { getId },
+//     _trace: {
+//       componentName: TRACE_BOOTSTRAP_NAME,
+//       isTraceEnabled: IS_TRACE_ENABLED_DEFAULT,
+//       isContainerComponent: false,
+//       isLeaf: false,
+//       path: [0],
+//       sendMessage: sendMessage,
+//       onMessage: null, // not used for now
+//       traceSpecs: traceSpecs,
+//       defaultTraceSpecs: [defaultTraceSourceFn, defaultTraceSinkFn]
+//     }
+//   };
+//
+//   return adviseApp(traceDef, App)
+// }
 
 // TODO : test the window messaging and iframe add
 // TODO : write the iframe message reception

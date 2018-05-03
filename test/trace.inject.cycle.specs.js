@@ -61,6 +61,9 @@ const opsOnInitialModel = [
   { op: "remove", path: '/dummyKey2InitModel' },
 ];
 
+const processJsonPatchCommands =
+  (patchCommands, currValue) => jsonpatch.applyPatch(currValue, patchCommands).newDocument;
+
 function getId(start) {
   let counter = start;
   return function () {
@@ -103,9 +106,7 @@ function behaviourUpdatingComponent(sources, settings) {
 
 function behaviourUpdatingComponentWithError(sources, settings) {
   return {
-    [A_CIRCULAR_BEHAVIOR_SOURCE]: markAsEvent(
-      sources[A_DRIVER].map(_ => {throw AN_ERROR})
-    )
+    [A_CIRCULAR_BEHAVIOR_SOURCE]: sources[A_DRIVER].map(_ => {throw AN_ERROR})
   }
 }
 
@@ -155,8 +156,6 @@ QUnit.test("main case - InjectCircularSources - behaviour, event (1 result), oth
   const done = assert.async(5);
   const traces = [];
 
-  const processJsonPatchCommands =
-    (patchCommands, currValue) => jsonpatch.applyPatch(currValue, patchCommands).newDocument;
   const injectSettings = {
     behaviour: {
       behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
@@ -3995,16 +3994,30 @@ QUnit.skip("main case - InjectCircularSources - behaviour, event (2 results), ot
 });
 
 QUnit.test("edge case - InjectCircularSources - error in event sink", function exec_test(assert) {
-  // What happens here is that `commandRequestComponentWithError` will produce an error, and hence will no longer emit
-  // However, other components (i.e. branches of the tree) will continue as usual, in so far as they do not require
-  // of the now dead event source. For instance, here, ANOTHER_DRIVER sink emits nothing
+  // Expected :
+  // Error should be propagated through error chanel of the event (that is not the case for behaviors)
+  // This terminate the event source, so no further requests will be processed
+  // The error is propagated to all 'clients' or children of the event source, which should terminate unless
+  // explicitly guarded against errors.
+  // In short the branch of the tree which is connected to the event source dies, the rest remains connected
+  // For instance, here, YET_ANOTHER_DRIVER continues to answer to incoming inputs from the behaviour source or else
+  // But ANOTHER_DRIVER emits nothing, it is a dependant of the event source
   resetGraphCounter();
   const done = assert.async(5);
   const traces = [];
-  /** @type InjectCircularSourcesSettings*/
+
   const injectSettings = {
-    behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
-    event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnOneResult]
+    behaviour: {
+      behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
+      processingBehaviourFn: processJsonPatchCommands,
+      initialBehaviorValue: INITIAL_STATE,
+      finalizeBehaviourSource: () => {}
+    },
+    event: {
+      eventSourceName: A_CIRCULAR_EVENT_SOURCE,
+      processingEventFn: commandProcessingFnOneResult,
+      finalizeEventSource: () => {}
+    }
   };
 
   const App = InjectCircularSources(set(componentNameInSettings, APP_NAME, injectSettings), [
@@ -4023,7 +4036,6 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
         // NOTE : the source is a behaviour but the sink is an event!
         [A_CIRCULAR_BEHAVIOR_SOURCE]: [traceBehaviourSourceFn, traceEventSinkFn],
         [A_CIRCULAR_EVENT_SOURCE]: [traceEventSourceFn, traceEventSinkFn],
-//        [DOM_SINK]: [identity, traceDOMsinkFn]
       },
       sendMessage: msg => traces.push(msg)
     },
@@ -4051,7 +4063,6 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
       ],
       successMessage: `sink ${YET_ANOTHER_DRIVER} produces the expected values`
     },
-    // I have to keep it, because the iframe is always there...
     [DOM_SINK]: {
       outputs:
         [
@@ -4156,6 +4167,8 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -4177,6 +4190,8 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -4198,6 +4213,8 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -4220,6 +4237,8 @@ QUnit.test("edge case - InjectCircularSources - error in event sink", function e
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -5429,8 +5448,17 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
   const traces = [];
   /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
-    behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
-    event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnOneResult]
+    behaviour: {
+      behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
+      processingBehaviourFn: processJsonPatchCommands,
+      initialBehaviorValue: INITIAL_STATE,
+      finalizeBehaviourSource: () => {}
+    },
+    event: {
+      eventSourceName: A_CIRCULAR_EVENT_SOURCE,
+      processingEventFn: commandProcessingFnOneResult,
+      finalizeEventSource: () => {}
+    }
   };
 
   const App = InjectCircularSources(set(componentNameInSettings, APP_NAME, injectSettings), [
@@ -5446,10 +5474,8 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         [A_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
         [ANOTHER_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
         [YET_ANOTHER_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
-        // NOTE : the source is a behaviour but the sink is an event!
         [A_CIRCULAR_BEHAVIOR_SOURCE]: [traceBehaviourSourceFn, traceEventSinkFn],
         [A_CIRCULAR_EVENT_SOURCE]: [traceEventSourceFn, traceEventSinkFn],
-//        [DOM_SINK]: [identity, traceDOMsinkFn]
       },
       sendMessage: msg => traces.push(msg)
     },
@@ -5467,7 +5493,1400 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
     },
     [ANOTHER_DRIVER]: {
       outputs: [
-        "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"
+          "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}",
+          "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        ],
+      successMessage: `sink ${ANOTHER_DRIVER} produces the expected values`
+    },
+    [YET_ANOTHER_DRIVER]: {
+      outputs: [
+        "circular behaviour emits: {\"key\":\"value\"}",
+      ],
+      successMessage: `sink ${YET_ANOTHER_DRIVER} produces the expected values`
+    },
+    // I have to keep it, because the iframe is always there...
+    [DOM_SINK]: {
+      outputs: ["<iframe id=\"devtool\" src=\"devtool.html\" style=\"width: 450px; height: 200px\"></iframe>"],
+      successMessage: `sink ${DOM_SINK} produces the expected values`,
+      transform: pipe(convertVNodesToHTML)
+    },
+  };
+
+  const expectedGraph = [
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "id": 0,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "id": 1,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "id": 2,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "id": 3,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "behaviourUpdatingComponentWithError",
+      "id": 4,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "id": 5,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "id": 6,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+  ];
+  const expectedTraces = [
+    {
+    "combinatorName": "InjectCircularSources",
+    "componentName": "App",
+    "emits": {
+      "identifier": "a_circular_behavior_source",
+      "notification": {
+        "kind": "N",
+        "value": {
+          "key": "value"
+        }
+      },
+      "type": 0
+    },
+    "id": 0,
+    "logType": "runtime",
+    "path": [
+      0,
+      0
+    ],
+    "settings": {}
+  },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "key": "value"
+          }
+        },
+        "type": 0
+      },
+      "id": 1,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "key": "value"
+          }
+        },
+        "type": 0
+      },
+      "id": 2,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "key": "value"
+          }
+        },
+        "type": 0
+      },
+      "id": 3,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "yet_another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular behaviour emits: {\"key\":\"value\"}"
+        },
+        "type": 1
+      },
+      "id": 4,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "yet_another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular behaviour emits: {\"key\":\"value\"}"
+        },
+        "type": 1
+      },
+      "id": 5,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "yet_another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular behaviour emits: {\"key\":\"value\"}"
+        },
+        "type": 1
+      },
+      "id": 6,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "yet_another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular behaviour emits: {\"key\":\"value\"}"
+        },
+        "type": 1
+      },
+      "id": 7,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "yet_another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular behaviour emits: {\"key\":\"value\"}"
+        },
+        "type": 1
+      },
+      "id": 8,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 9,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 10,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 11,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 12,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "behaviourUpdatingComponentWithError",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 13,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "behaviourUpdatingComponentWithError",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "error": "AN_ERROR",
+          "kind": "E"
+        },
+        "type": 1
+      },
+      "id": 14,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "error": "AN_ERROR",
+          "kind": "E"
+        },
+        "type": 1
+      },
+      "id": 15,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_behavior_source",
+        "notification": {
+          "error": "AN_ERROR",
+          "kind": "E"
+        },
+        "type": 1
+      },
+      "id": 16,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 17,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "a"
+          }
+        },
+        "type": 1
+      },
+      "id": 18,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "a"
+          }
+        },
+        "type": 1
+      },
+      "id": 19,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "a"
+          }
+        },
+        "type": 1
+      },
+      "id": 20,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "a"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 21,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "a"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 22,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "a"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 23,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "a"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 24,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 25,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 26,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 27,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 28,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 29,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "a"
+        },
+        "type": 0
+      },
+      "id": 30,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 31,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 32,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 33,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 34,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 35,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 36,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 37,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 38,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 39,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 40,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "b"
+          }
+        },
+        "type": 1
+      },
+      "id": 41,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "b"
+          }
+        },
+        "type": 1
+      },
+      "id": 42,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "b"
+          }
+        },
+        "type": 1
+      },
+      "id": 43,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 44,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 45,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 46,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
+        },
+        "type": 0
+      },
+      "id": 47,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 48,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 49,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 50,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 51,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 52,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 53,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 54,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 55,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 56,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 57,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: b"
+        },
+        "type": 1
+      },
+      "id": 58,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    }
+  ];
+
+  const testResult = runTestScenario(inputs, expectedMessages, tracedApp, {
+    tickDuration: 3,
+    waitForFinishDelay: 10,
+    analyzeTestResults: analyzeTestResults(assert, done),
+    errorHandler: function (err) {
+      done(err)
+    }
+  });
+  testResult
+    .then(_ => {
+      assert.deepEqual(removeWhenField(traces), expectedGraph.concat(expectedTraces), `Traces are produced as expected!`);
+      done()
+    });
+});
+
+QUnit.test("edge case - InjectCircularSources - error in behaviour sink - post error", function exec_test(assert) {
+  // What happens here is that `commandRequestComponentWithError` will produce an error, and hence will no longer emit
+  // However, other components (i.e. branches of the tree) will continue as usual, in so far as they do not require
+  // of the now dead event source. For instance, here, ANOTHER_DRIVER sink emits nothing
+  // HERE IT PROVES THAT the behaviour sink is dead for good, as `behaviourUpdatingComponent` will emit nothing on
+  // its sink... while itself it has generated no error
+  resetGraphCounter();
+  const done = assert.async(5);
+  const traces = [];
+  /** @type InjectCircularSourcesSettings*/
+  const injectSettings = {
+    behaviour: {
+      behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
+      processingBehaviourFn: processJsonPatchCommands,
+      initialBehaviorValue: INITIAL_STATE,
+      finalizeBehaviourSource: () => {}
+    },
+    event: {
+      eventSourceName: A_CIRCULAR_EVENT_SOURCE,
+      processingEventFn: commandProcessingFnOneResult,
+      finalizeEventSource: () => {}
+    }
+  };
+
+  const App = InjectCircularSources(set(componentNameInSettings, APP_NAME, injectSettings), [
+    Combine(set(componentNameInSettings, 'Inner App', {}), [
+      behaviourUpdatingComponentWithError,
+      commandRequestComponent,
+      sinkUpdatingComponent,
+      behaviourUpdatingComponent
+    ])
+  ]);
+  const tracedApp = traceApp({
+    _trace: {
+      traceSpecs: {
+        [A_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        [ANOTHER_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        [YET_ANOTHER_DRIVER]: [traceEventSourceFn, traceEventSinkFn],
+        [A_CIRCULAR_BEHAVIOR_SOURCE]: [traceBehaviourSourceFn, traceEventSinkFn],
+        [A_CIRCULAR_EVENT_SOURCE]: [traceEventSourceFn, traceEventSinkFn],
+      },
+      sendMessage: msg => traces.push(msg)
+    },
+    _helpers: { getId: getId(0) }
+  }, App);
+
+  const inputs = [
+    { [A_DRIVER]: { diagram: '-a--b--' } },
+  ];
+
+  const expectedMessages = {
+    [A_DRIVER]: {
+      outputs: inputs[0][A_DRIVER].diagram.replace(/-/g, '').split('').map(x => `driver1 emits: ${x}`),
+      successMessage: `sink ${A_DRIVER} produces the expected values`
+    },
+    [ANOTHER_DRIVER]: {
+      outputs: [
+        "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"a\"},\"response\":\"a_response\"}",
+        "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
       ],
       successMessage: `sink ${ANOTHER_DRIVER} produces the expected values`
     },
@@ -5567,6 +6986,19 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         0,
         0,
         2
+      ]
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "behaviourUpdatingComponent",
+      "id": 7,
+      "isContainerComponent": false,
+      "logType": "graph_structure",
+      "path": [
+        0,
+        0,
+        0,
+        3
       ]
     },
   ];
@@ -6194,177 +7626,6 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "InjectCircularSources",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 30,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": "InjectCircularSources|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 31,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 32,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "sinkUpdatingComponent",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 0
-      },
-      "id": 33,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        2
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "sinkUpdatingComponent",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 34,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        2
-      ]
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 35,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectCircularSources|Inner",
-      "componentName": "App",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 36,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "InjectCircularSources",
-      "componentName": "App",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 37,
-      "logType": "runtime",
-      "path": [
-        0,
-        0
-      ]
-    },
-    {
-      "combinatorName": "Combine",
-      "componentName": "ROOT",
-      "emits": {
-        "identifier": "another_driver",
-        "notification": {
-          "error": undefined,
-          "kind": "C"
-        },
-        "type": 1
-      },
-      "id": 38,
-      "logType": "runtime",
-      "path": [
-        0
-      ]
-    },
-    {
       "combinatorName": undefined,
       "componentName": "sinkUpdatingComponent",
       "emits": {
@@ -6375,7 +7636,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         },
         "type": 0
       },
-      "id": 39,
+      "id": 30,
       "logType": "runtime",
       "path": [
         0,
@@ -6396,7 +7657,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         },
         "type": 1
       },
-      "id": 40,
+      "id": 31,
       "logType": "runtime",
       "path": [
         0,
@@ -6416,7 +7677,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         },
         "type": 1
       },
-      "id": 41,
+      "id": 32,
       "logType": "runtime",
       "path": [
         0,
@@ -6435,7 +7696,7 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         },
         "type": 1
       },
-      "id": 42,
+      "id": 33,
       "logType": "runtime",
       "path": [
         0,
@@ -6450,6 +7711,189 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
         "notification": {
           "kind": "N",
           "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 34,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "driver1 emits: a"
+        },
+        "type": 1
+      },
+      "id": 35,
+      "logType": "runtime",
+      "path": [
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 36,
+      "logType": "runtime",
+      "path": [
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 37,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 38,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 39,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "emits": {
+        "identifier": "a_driver",
+        "notification": {
+          "kind": "N",
+          "value": "b"
+        },
+        "type": 0
+      },
+      "id": 40,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "settings": {}
+    },
+    {
+      "combinatorName": undefined,
+      "componentName": "commandRequestComponent",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "b"
+          }
+        },
+        "type": 1
+      },
+      "id": 41,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "b"
+          }
+        },
+        "type": 1
+      },
+      "id": 42,
+      "logType": "runtime",
+      "path": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
+      "emits": {
+        "identifier": "a_circular_event_source",
+        "notification": {
+          "kind": "N",
+          "value": {
+            "command": "a_command",
+            "context": null,
+            "params": "b"
+          }
         },
         "type": 1
       },
@@ -6461,48 +7905,72 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       ]
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "ROOT",
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_event_source",
         "notification": {
           "kind": "N",
-          "value": "driver1 emits: a"
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
         },
-        "type": 1
+        "type": 0
       },
       "id": 44,
       "logType": "runtime",
       "path": [
+        0,
         0
-      ]
+      ],
+      "settings": {}
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "ROOT",
+      "combinatorName": "InjectCircularSources|Inner",
+      "componentName": "App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_event_source",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
         },
         "type": 0
       },
       "id": 45,
       "logType": "runtime",
       "path": [
+        0,
         0
       ],
       "settings": {}
     },
     {
-      "combinatorName": "InjectCircularSources",
-      "componentName": "App",
+      "combinatorName": "Combine",
+      "componentName": "Inner App",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_event_source",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
         },
         "type": 0
       },
@@ -6510,18 +7978,26 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "logType": "runtime",
       "path": [
         0,
+        0,
         0
       ],
       "settings": {}
     },
     {
-      "combinatorName": "InjectCircularSources|Inner",
-      "componentName": "App",
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "a_circular_event_source",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": {
+            "request": {
+              "command": "a_command",
+              "context": null,
+              "params": "b"
+            },
+            "response": "a_response"
+          }
         },
         "type": 0
       },
@@ -6529,91 +8005,44 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "logType": "runtime",
       "path": [
         0,
-        0
+        0,
+        0,
+        2
       ],
       "settings": {}
     },
     {
-      "combinatorName": "Combine",
-      "componentName": "Inner App",
+      "combinatorName": undefined,
+      "componentName": "sinkUpdatingComponent",
       "emits": {
-        "identifier": "a_driver",
+        "identifier": "another_driver",
         "notification": {
           "kind": "N",
-          "value": "b"
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
         },
-        "type": 0
+        "type": 1
       },
       "id": 48,
       "logType": "runtime",
       "path": [
         0,
         0,
-        0
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "commandRequestComponent",
-      "emits": {
-        "identifier": "a_driver",
-        "notification": {
-          "kind": "N",
-          "value": "b"
-        },
-        "type": 0
-      },
-      "id": 49,
-      "logType": "runtime",
-      "path": [
         0,
-        0,
-        0,
-        1
-      ],
-      "settings": {}
-    },
-    {
-      "combinatorName": undefined,
-      "componentName": "commandRequestComponent",
-      "emits": {
-        "identifier": "a_circular_event_source",
-        "notification": {
-          "kind": "N",
-          "value": {
-            "command": "a_command",
-            "context": null,
-            "params": "b"
-          }
-        },
-        "type": 1
-      },
-      "id": 50,
-      "logType": "runtime",
-      "path": [
-        0,
-        0,
-        0,
-        1
+        2
       ]
     },
     {
       "combinatorName": "Combine",
       "componentName": "Inner App",
       "emits": {
-        "identifier": "a_circular_event_source",
+        "identifier": "another_driver",
         "notification": {
           "kind": "N",
-          "value": {
-            "command": "a_command",
-            "context": null,
-            "params": "b"
-          }
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
         },
         "type": 1
       },
-      "id": 51,
+      "id": 49,
       "logType": "runtime",
       "path": [
         0,
@@ -6625,21 +8054,52 @@ QUnit.test("edge case - InjectCircularSources - error in behaviour sink", functi
       "combinatorName": "InjectCircularSources|Inner",
       "componentName": "App",
       "emits": {
-        "identifier": "a_circular_event_source",
+        "identifier": "another_driver",
         "notification": {
           "kind": "N",
-          "value": {
-            "command": "a_command",
-            "context": null,
-            "params": "b"
-          }
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 50,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "InjectCircularSources",
+      "componentName": "App",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
+        },
+        "type": 1
+      },
+      "id": 51,
+      "logType": "runtime",
+      "path": [
+        0,
+        0
+      ]
+    },
+    {
+      "combinatorName": "Combine",
+      "componentName": "ROOT",
+      "emits": {
+        "identifier": "another_driver",
+        "notification": {
+          "kind": "N",
+          "value": "circular event source emits: {\"request\":{\"context\":null,\"command\":\"a_command\",\"params\":\"b\"},\"response\":\"a_response\"}"
         },
         "type": 1
       },
       "id": 52,
       "logType": "runtime",
       "path": [
-        0,
         0
       ]
     },
@@ -6779,8 +8239,17 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
   const traces = [];
   /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
-    behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
-    event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnWithError]
+    behaviour: {
+      behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
+      processingBehaviourFn: processJsonPatchCommands,
+      initialBehaviorValue: INITIAL_STATE,
+      finalizeBehaviourSource: () => {}
+    },
+    event: {
+      eventSourceName: A_CIRCULAR_EVENT_SOURCE,
+      processingEventFn: commandProcessingFnWithError,
+      finalizeEventSource: () => {}
+    }
   };
 
   const App = InjectCircularSources(set(componentNameInSettings, APP_NAME, injectSettings), [
@@ -6931,6 +8400,8 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -6952,6 +8423,8 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -6973,6 +8446,8 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -6995,6 +8470,8 @@ QUnit.test("edge case - InjectCircularSources - processFn throws", function exec
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -8474,8 +9951,17 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
   const traces = [];
   /** @type InjectCircularSourcesSettings*/
   const injectSettings = {
-    behaviour: [A_CIRCULAR_BEHAVIOR_SOURCE, INITIAL_STATE],
-    event: [A_CIRCULAR_EVENT_SOURCE, commandProcessingFnWithThrowingStream]
+    behaviour: {
+      behaviourSourceName: A_CIRCULAR_BEHAVIOR_SOURCE,
+      processingBehaviourFn: processJsonPatchCommands,
+      initialBehaviorValue: INITIAL_STATE,
+      finalizeBehaviourSource: () => {}
+    },
+    event: {
+      eventSourceName: A_CIRCULAR_EVENT_SOURCE,
+      processingEventFn: commandProcessingFnWithThrowingStream,
+      finalizeEventSource: () => {}
+    }
   };
 
   const App = InjectCircularSources(set(componentNameInSettings, APP_NAME, injectSettings), [
@@ -8618,6 +10104,7 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
     },
   ];
   const expectedTraces = [
+
     {
       "combinatorName": "InjectCircularSources",
       "componentName": "App",
@@ -8626,6 +10113,8 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -8647,6 +10136,8 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -8668,6 +10159,8 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
@@ -8690,6 +10183,8 @@ QUnit.test("edge case - InjectCircularSources - processFn returns stream which t
         "notification": {
           "kind": "N",
           "value": {
+            "dummyKey1InitModel": "dummy2",
+            "dummyKey3InitModel": "dummy3",
             "key": "value"
           }
         },
