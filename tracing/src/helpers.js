@@ -12,6 +12,11 @@ export function getId() {
   return counter++
 }
 
+export function getIdFactory() {
+  let counter = 0;
+  return function getId(){return counter++}
+}
+
 export function getIsTraceEnabled(settings) {
   return !!settings._trace.isTraceEnabled
 }
@@ -88,6 +93,8 @@ export const leafFlagInSettings = lensPath(['_trace', 'isLeaf']);
 export const componentNameInSettings = lensPath(['_trace', 'componentName']);
 
 export const combinatorNameInSettings = lensPath(['_trace', 'combinatorName']);
+
+export const iframeSourceInTraceDef = lensPath(['_trace', 'iframeSource']);
 
 export const iframeIdInTraceDef = lensPath(['_trace', 'iframeId']);
 

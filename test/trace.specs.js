@@ -7,7 +7,7 @@ import { addPrefix, DOM_SINK, EmptyComponent, format, vLift } from "../utils/src
 import { resetGraphCounter, traceApp, traceBehaviourSinkFn, traceBehaviourSourceFn } from "../tracing/src"
 import { componentNameInSettings, traceDOMsinkFn, traceEventSinkFn, traceEventSourceFn } from "../tracing/src/helpers"
 import { div, h, span } from 'cycle-snabbdom'
-import { iframeId, defaultIFrameId, PATH_ROOT, TRACE_BOOTSTRAP_NAME } from "../tracing/src/properties"
+import { defaultIFrameId, defaultIFrameSource, PATH_ROOT, TRACE_BOOTSTRAP_NAME } from "../tracing/src/properties"
 import { Combine } from "../src/components/Combine"
 import { InjectSourcesAndSettings, InSlot } from "../src"
 import { ForEach } from "../src/components/ForEach"

@@ -93,13 +93,12 @@ step-by-step building of the showcased sample application. A shorter introductio
 # So what is a component combinator?
 A component combinator is a **parametrizable** function which... **combines** components. To each
  combinator will correspond a different combining logic. For instance, the `ListOf` combinator 
- will take two components, and will admit a stream source name as parameter, which emits arrays 
- (for instance `ListOf({list:..., as:...}, [C1, C2])`). The combined component will activate the 
- `C1`  component whenever the source emits an empty array, and a combined list of `C2` components 
- otherwise. So here the combining logic follows an iteration logic. 
+ will take two components, is parametrized by an list-emitting source (for instance `ListOf
+ ({list:..., as:...}, [C1, C2])`), and applies an iterating logic to `[C1, cC]` : `C1`  component 
+ will be activated whenever the list source emits an empty array, otherwise a combined list of 
+ `C2` components will be activated. 
  
- The simplest of those 
- combinator is `Combine` (for instance `Combine{{...}, [C0, [C1, C2]]}`), whose DOM sink is 
+ The simplest of those combinator is `Combine` (for instance `Combine{{...}, [C0, [C1, C2]]}`), whose DOM sink is 
  the result of merging `Cx` DOM sinks **into** `C0` DOM sink; and whose non-DOM sinks are 
  the merge of the respective `Cx` non-DOM sink. Here the combining logic is a merge logic.
  
@@ -256,7 +255,7 @@ For instance, specification for a login section of an application could go as su
 
 ![login demo with Switch combinator](examples/SwitchLogin/assets/login_demo.gif)
 
-A tentaive code to implement those specification with our library would look like :
+A tentative code to implement those specification with our library would look like :
 
 ```javascript
 export const App = Switch({

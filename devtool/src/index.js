@@ -6,7 +6,7 @@ window.onload = function() {
   // A function to process messages received by the window.
   function receiveMessage(e) {
     // Update the div element to display the message.
-    messageEle.innerHTML = "Message Received: " + e.data;
+    messageEle.innerHTML += "</br>" + "Message Received: " + e.data;
   }
 
   // Setup an event listener that calls receiveMessage() when the window

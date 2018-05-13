@@ -72,9 +72,6 @@ function DisplayTree(displayTreeSettings, componentTree) {
     // NOTE : as those components are leaves in the component tree, they are advised automatically, so unadvise them
     // not to falsify the auto-generated location path in the component tree
     const childrenComponents = componentTree
-    // .map(childComponent => isAdvised(childComponent) // TODO : remove when tested with tree depth 2
-    // ? removeAdvice(childComponent)
-    // : childComponent);
     const { treeSettings } = settings;
     const { localStateSource, localTreeSetting, defaultUIstateNode, localCommandSpecs, lenses } = treeSettings;
     // yeah I know, double indirection
@@ -109,7 +106,6 @@ export function Tree(_treeSettings, arrayComponents) {
   assertContract(isValidTreeSignature, [_treeSettings, arrayComponents], `Tree > isValidTreeSignature : wrong parameters ! `);
 
   // TODO : default values, some of those will be undefined and break down the road, so do some ramda magic somewhere
-  // TODO : think about tracing : logging Map contents... circular sources are traced??
   const { treeSettings } = _treeSettings;
   const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode, localCommandSpecs, lenses, sinkNames } = treeSettings;
   const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = arrayComponents;
@@ -147,8 +143,3 @@ export function Tree(_treeSettings, arrayComponents) {
 
   return component
 }
-
-// DOC : the rule with ForEach (in tips in blog) is that the source used in the ForEach can never be reused down the
-// component tree. That means also that no other streams depending on it can be used
-// This is why that source downstream has already emitted its value for the branching to happen. So downstream sees
-// another source which is next(source)!

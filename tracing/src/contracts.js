@@ -19,6 +19,8 @@ export const isTraceDefSpecs = isStrictRecordE({
     isContainerComponent: isOptional(isBoolean),
     isLeaf: isOptional(isBoolean),
     path: isOptional(isString),
+    iframeId : isOptional(isString),
+    iframeSource : isOptional(isString),
     sendMessage: isOptional(isFunction),
     onMessage: T, // not used for now
     traceSpecs: isHashMap(isString, isTraceSpecsFns),

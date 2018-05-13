@@ -44,6 +44,8 @@ export function InjectCircularSources(injectCircularSourcesSettings, componentTr
   const {eventSourceName, processingEventFn, finalizeEventSource} = injectCircularSourcesSettings.event;
   const eventSource = new Rx.Subject();
 
+  // TODO : think whether use publish and connect would give better semantics here
+
   function computeSinks(parentComponent, childrenComponents, sources, settings) {
     const reducedSinks = m(
       {},

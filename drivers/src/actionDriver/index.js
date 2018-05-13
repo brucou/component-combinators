@@ -1,7 +1,9 @@
-import { mapObjIndexed, tryCatch, values, isNil } from 'ramda';
+import { assoc, isNil, mapObjIndexed, tryCatch, values } from 'ramda';
 import * as Rx from "rx"
 import { assertContract, isError, isPromise } from "../../../contracts/src/index"
 import { format } from "../../../utils/src/index"
+import { decorateWithAdvice } from "../../../utils/src"
+import { deconstructTraceFromSettings, makeSourceNotificationMessage } from "../../../tracing/src/helpers"
 
 const $ = Rx.Observable;
 
@@ -36,7 +38,6 @@ function eventEmitterFactory(_, context, __) {
  */
 export function makeDomainActionDriver(repository, config) {
   // Create a subject for each context defined in config
-  // TODO : unsubscribe flows to think about (when app is exited willingly or forcefully)
   const eventEmitters = mapObjIndexed(eventEmitterFactory, config);
 
   return function (sink$) {
@@ -68,6 +69,7 @@ export function makeDomainActionDriver(repository, config) {
       }
       else {
         // not a promise, hence synchronously returned value or exception from tryCatch
+        // TODO : replace with Rx scheduler currentThread
         if (isError(actionResult)) {
           setTimeout(function () {eventEmitters[context].onError(actionResult)}, 0)
         }
@@ -83,6 +85,8 @@ export function makeDomainActionDriver(repository, config) {
       }
     });
 
+    // TODO : add an error handler
+    // TODO : unsubscribe flows to think about (when app is exited willingly or forcefully)
     source$.subscribe(function (x) {console.log(`makeDomainActionDriver`, x)});
 
     // DOC : responseSource$ will emit responses for any of the action request
@@ -90,10 +94,54 @@ export function makeDomainActionDriver(repository, config) {
     //     : returns the subject from which one can listen for responses of a given context
     const responseSource$ = $.merge(values(eventEmitters));
     responseSource$.getResponse = function getResponse(context) {
-      console.warn('getResponse', context);
       return eventEmitters[context]
     };
 
     return responseSource$;
   }
 }
+
+export function traceActionDriverSource(responseSource$, sourceName, settings) {
+  // ADR
+  // We want to get trace information for each result of action passing through the source
+  // There are two possibilities :
+  // 1. Let the default tracing system insert trace information in `responseSource$`
+  //    This will work, as `eventEmitters[context]` emittimg implies `responseSource$` emits
+  //    However this is not an equivalence, meaning that `responseSource$` will also emit when another event emitter
+  //    for another context will emit, possibly creating confusion when reading traces.
+  // 2. Insert trace information individually for each emitter ocntext and leave `responseSource$` untraced
+  //    While slightly more complex, this seems to be the most API-user-friendly solution
+
+  if ((!'getResponse' in responseSource$)) {
+    throw `traceActionDriverSource > well, are you really using the right action driver? Can't find a 'getResponse' property in the action source!`
+  }
+
+  const { traceSpecs, defaultTraceSpecs, combinatorName, componentName, sendMessage, path } = deconstructTraceFromSettings(settings);
+
+  responseSource$.getResponse = decorateWithAdvice({
+    after: function (joinpoint, App) {
+      const { args, returnedValue } = joinpoint;
+      const [context] = args;
+
+      return returnedValue
+        .materialize()
+        .tap(notification => sendMessage(makeActionSourceNotificationMessage(
+          { sourceName, settings, notification },
+          context
+        )))
+        .dematerialize()
+        // Needless to say, action driver is event-based, so share it is
+        .share()
+    }
+  }, responseSource$.getResponse);
+
+  return responseSource$
+}
+
+function makeActionSourceNotificationMessage({ sourceName, settings, notification }, context) {
+  const message = makeSourceNotificationMessage({ sourceName, settings, notification });
+
+  return assoc('details', {context}, message)
+}
+
+// TODO : test

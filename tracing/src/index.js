@@ -1,16 +1,16 @@
 import {
-  combinatorNameInSettings,
-  componentNameInSettings, containerFlagInSettings, deconstructTraceFromSettings, defaultTraceSinkFn,
-  defaultTraceSourceFn, getId, getIsTraceEnabled, getLeafComponentName, getPathForNthChild, iframeIdInTraceDef,
-  isLeafComponent, leafFlagInSettings, mapOverComponentTree, pathInSettings, traceSinks, traceSources
+  combinatorNameInSettings, componentNameInSettings, containerFlagInSettings, deconstructTraceFromSettings,
+  defaultTraceSinkFn, defaultTraceSourceFn, getId, getIsTraceEnabled, getLeafComponentName, getPathForNthChild,
+  iframeIdInTraceDef, iframeSourceInTraceDef, isLeafComponent, leafFlagInSettings, mapOverComponentTree, pathInSettings,
+  traceSinks, traceSources
 } from './helpers'
 import {
-  GRAPH_STRUCTURE, iframeId, defaultIFrameId, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME
+  defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME
 } from './properties'
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
 import { iframe } from "cycle-snabbdom"
-import { pathOr, set, view, get } from 'ramda'
+import { path, pathOr, set, view } from 'ramda'
 import { assertContract } from "../../contracts/src"
 import { isTraceDefSpecs } from "./contracts"
 
@@ -18,29 +18,48 @@ export * from './helpers'
 export * from './properties'
 export * from './contracts'
 
+const maxBufferSize = 40960;
+
 let graphCounter = 0;
 
 function getGraphCounter() { return graphCounter++}
 
 export function resetGraphCounter() { graphCounter = 0}
 
-export function makeIFrameMessenger(iframeId){
+export function makeIFrameMessenger(iframeId) {
   /**
    * Sends a message to the devtool iframe
    * @param {*} msg Anything which can be JSON.stringified
    */
-  const iframeEl = document.getElementById(iframeId);
-  if (!iframeEl) throw `tracing > makeIFrameMessenger > did not find an iframe with id ${iframeId}!`
-
-  const contentWindow = iframeEl.contentWindow;
+  const iFrameId = iframeId || defaultIFrameId;
+  let iframeEl;
+  let buffer = [];
 
   function sendMessage(msg) {
-    // Make sure you are sending a string, and to stringify JSON
-    // NOTE : also possible to pass a sequence of Transferable objects with the message
-    contentWindow.postMessage(JSON.stringify(msg), '*');
+    iframeEl = iframeEl || document.querySelector(iFrameId);
+    debugger
+    // NOTE TO SELF: the devtool.src in devtool.html must be in absolute path, i.e. see if a github path works and
+    // commit
+    if (!iframeEl) {
+      buffer.push(msg);
+      if (buffer.length > maxBufferSize) throw `tracing > makeIFrameMessenger > sendMessage : exceeded buffer size!`
+    }
+    else {
+      // Make sure you are sending a string, and to stringify JSON
+      // NOTE : also possible to pass a sequence of Transferable objects with the message
+      buffer.forEach(msg => postMessage(iframeEl.contentWindow, msg));
+      // Empty buffer, now that we sent the messages in it
+      buffer = [];
+      // Post the pending message
+      postMessage(iframeEl.contentWindow, msg);
+    }
   }
 
   return sendMessage
+}
+
+function postMessage(window, msg){
+  window.postMessage(JSON.stringify(msg), '*');
 }
 
 // onMessage
@@ -74,8 +93,8 @@ function addTraceInfoToComponent(path) {
           updatedChildComponentSettings = set(containerFlagInSettings, isContainerComponent, updatedChildComponentSettings);
           const isLeaf = isLeafComponent(component);
 
-          // Edge case : I have to also log those component from the component tree which are leaf components as they won't
-          // log themselves
+          // Edge case : I have to also log those component from the component tree which are leaf components as they
+          // won't log themselves
           if (isLeaf) {
             // If the component is a leaf component :
             // - logs the corresponding portion of the tree structure
@@ -170,43 +189,36 @@ function postprocessOutput(sinks, settings) {
   return tracedSinks
 }
 
-const TraceIframe = iframeId => vLift(
-  iframe(iframeId, {
-    props: {
-      src: iframeId || defaultIFrameId,
+const TraceIframe = (iframeSource, iframeId) => vLift(
+  iframe(iframeId || defaultIFrameId, {
+    attrs: {
+      src: iframeSource || defaultIFrameSource,
     },
     style: {
-      width: '450px',
+      width: '900px',
       height: '200px'
     }
   }, [])
 );
 
-const adviseApp = (traceDef, App) => decorateWithAdvice({
-  around: function (joinpoint, App) {
-    const { args } = joinpoint;
-    const [sources, settings] = args;
-    const iframeId = get(iframeIdInTraceDef, traceDef);
+function adviseApp(traceDef, App) {
+  return decorateWithAdvice({
+    around: function (joinpoint, App) {
+      const { args } = joinpoint;
+      const [sources, settings] = args;
+      const iframeSource = view(iframeSourceInTraceDef, traceDef);
+      const iframeId = view(iframeIdInTraceDef, traceDef);
 
-    const tracedApp = Combine({}, [
-      TraceIframe(iframeId),
-      Combine(traceDef, [App])
-    ]);
+      debugger
+      const tracedApp = Combine({}, [
+        TraceIframe(iframeSource, iframeId),
+        Combine(traceDef, [App])
+      ]);
 
-    // That does not work, as App will receive `traceDef` settings through local settings, and we need with
-    // mSettings
-    // const tracedApp = Combine({}, [
-    //   TraceIframe,
-    //   InjectSourcesAndSettings({
-    //     settings: () => traceDef
-    //   }, [
-    //     App
-    //   ])
-    // ]);
-
-    return tracedApp(sources, settings)
-  }
-}, App);
+      return tracedApp(sources, settings)
+    }
+  }, App);
+}
 
 /**
  * @param {TraceDef} traceDefSpecs
@@ -225,8 +237,12 @@ export function traceApp(traceDefSpecs, App) {
       isContainerComponent: pathOr(false, ['_trace', 'isContainerComponent'], traceDefSpecs),
       isLeaf: pathOr(false, ['_trace', 'isLeaf'], traceDefSpecs),
       path: pathOr([0], ['_trace', 'path'], traceDefSpecs),
-      iframeId : pathOr(defaultIFrameId, ['_trace', 'iframeId'], traceDefSpecs),
-      sendMessage: pathOr(sendMessage, ['_trace', 'sendMessage'], traceDefSpecs),
+      iframeSource: pathOr(defaultIFrameSource, ['_trace', 'iframeSource'], traceDefSpecs),
+      iframeId: pathOr(defaultIFrameId, ['_trace', 'iframeId'], traceDefSpecs),
+      sendMessage: pathOr(
+        makeIFrameMessenger(path(['_trace', 'iframeId'], traceDefSpecs)),
+        ['_trace', 'sendMessage'], traceDefSpecs
+      ),
       onMessage: null, // not used for now
       traceSpecs: traceDefSpecs._trace.traceSpecs,
       defaultTraceSpecs: pathOr([defaultTraceSourceFn, defaultTraceSinkFn], ['_trace', 'defaultTraceSpecs'], traceDefSpecs),
@@ -289,12 +305,20 @@ export function traceApp(traceDefSpecs, App) {
  * @property {{getId : function()}} _helpers
  */
 
-// TODO : how to trace the DOM source??, I have to intervene the dom OBJECT! same for document thing about it
-// TODO : add in GRAOH_STRUCTURE alos sources and sinks for each component
-// This will allow to detect when a component is terminated (i.e. when all its sinks are terminated), and also trace the
-// sources available for // each // component
+// TODO : trace the DOM source?? possible nightmare! same for document... think about it
+// could impose to declare all DOM events in separate source through an Events combinator, then trace as usual
+// because cyclejs DOM.select.event is recursive, this could be the simplest way. To think about, maybe it is not
+// that hard?
 // DOC : mandatory for every source, sink to explicity pass a traceSpecs :/
-// Not good idea to guess from rxjs type (coupled to rxjs v4, and britle)
-// Naive type implementation does not propagate easily to derived source/sinks
-// Not practical to ask the programmr to, all the time, explicitly indicate behaviour or event...
-// Because he will forget, and there will be nasty bugs there. Or else, we put severe type controls in place.
+// ADR :
+// For tracing sources or sinks, the best strategy is to impose an interface contract on those sources and sinks.
+// Traceability for a source or sink hence means providing a `traceSource` and `traceSink` function with the
+// responsibility to do the job.
+// Studied alternatives were unpractical or outright failing :
+// - guessing nature of source/sink from rxjs type introduced coupling with rxjs v4, and was in general more britle
+// - introducing a behaviour/event abstraction on top of rxjs is not easy to do properly without modifying rxjs
+// internals, i.e. we would start coding to an implementation when we want to code to an interface
+// - Naive duck typing for behaviour/event distinction does not propagate easily to derived source/sinks (cf. point
+// above)
+// - We need a solution which depends as little as possible on the programmer, as he is the most unreliable piece in
+// the system.
