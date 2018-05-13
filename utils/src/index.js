@@ -276,22 +276,6 @@ function isString(obj) {
   return typeof obj === "string";
 }
 
-// from https://github.com/substack/deep-freeze/blob/master/index.js
-function deepFreeze(o) {
-  Object.freeze(o);
-
-  Object.getOwnPropertyNames(o).forEach(function (prop) {
-    if (o.hasOwnProperty(prop)
-      && o[prop] !== null
-      && (typeof o[prop] === "object" || typeof o[prop] === "function")
-      && !Object.isFrozen(o[prop])) {
-      deepFreeze(o[prop]);
-    }
-  });
-
-  return o;
-}
-
 function makeErrorMessage(errorMessage) {
   return ERROR_MESSAGE_PREFIX + errorMessage;
 }
@@ -379,9 +363,8 @@ const decorateWith = curry(function decorateWith(decoratingFnsSpecs, fnToDecorat
  * before(fnToDecorate, fnToDecorateName, args) or nil
  * after(fnToDecorate, fnToDecorateName, result) or nil
  * but not both nil
- * TODO : incoherent! after can modify returned value but before cannot
- * TODO : refactor as standard advice : before, around, after - only around can modify flow/args
- * TODO : edge case not dealt with : throwing?
+ * TODO : replace by new decoration version
+ * NOTE : this code is used only by FSM for decorating action, guard, i.e. FSM/utils > decorateModelUpdate
  * @returns {function(fnToDecorate: Function, fnToDecorateName:String, args:Array<*>)}
  */
 function makeFunctionDecorator({ before, after, name }) {
@@ -668,7 +651,6 @@ function makeAdvisedFunction(advice) {
         result = fnToDecorate.apply(null, args);
 
         // if advised function does not throw, then we execute `afterReturning` advice
-        // TODO : Contract : if `after` then MUST NOT have `afterThrowing` or `afterReturning`
         afterReturning && afterReturning(assoc('returnedValue', result, joinpoint), fnToDecorate);
         return result
       }
@@ -769,7 +751,6 @@ export {
   // Misc. utils
   unfoldObjOverload,
   removeNullsFromArray,
-  deepFreeze,
   makeErrorMessage,
   decorateWithOne,
   decorateWith,

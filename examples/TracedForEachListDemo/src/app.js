@@ -77,6 +77,7 @@ const traceConfig = {
     },
     // sendMessage: ..., // not set : will use default which is to emit in iframe with contentWindow.postMessage
     iframeId : defaultIFrameId,
+    // NOTE TO SELF: this is with respect to index.html
     iframeSource : '../../devtool/devtool.html'
   },
   _helpers: { getId: getIdFactory() }

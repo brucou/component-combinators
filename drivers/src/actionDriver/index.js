@@ -119,11 +119,11 @@ export function traceActionDriverSource(responseSource$, sourceName, settings) {
   const { traceSpecs, defaultTraceSpecs, combinatorName, componentName, sendMessage, path } = deconstructTraceFromSettings(settings);
 
   responseSource$.getResponse = decorateWithAdvice({
-    after: function (joinpoint, App) {
-      const { args, returnedValue } = joinpoint;
+    around: function (joinpoint, fnToDecorate) {
+      const { args } = joinpoint;
       const [context] = args;
 
-      return returnedValue
+      return fnToDecorate(context)
         .materialize()
         .tap(notification => sendMessage(makeActionSourceNotificationMessage(
           { sourceName, settings, notification },

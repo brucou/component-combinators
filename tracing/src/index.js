@@ -37,9 +37,6 @@ export function makeIFrameMessenger(iframeId) {
 
   function sendMessage(msg) {
     iframeEl = iframeEl || document.querySelector(iFrameId);
-    debugger
-    // NOTE TO SELF: the devtool.src in devtool.html must be in absolute path, i.e. see if a github path works and
-    // commit
     if (!iframeEl) {
       buffer.push(msg);
       if (buffer.length > maxBufferSize) throw `tracing > makeIFrameMessenger > sendMessage : exceeded buffer size!`
@@ -110,6 +107,7 @@ function addTraceInfoToComponent(path) {
               id: getGraphCounter()
             });
 
+            // TODO : could be written with `pipe` pipe(set(componentNameInSettings, getLeafComponentName(component))...
             updatedChildComponentSettings = set(componentNameInSettings, getLeafComponentName(component), updatedChildComponentSettings);
             updatedChildComponentSettings = set(leafFlagInSettings, isLeaf, updatedChildComponentSettings);
             updatedChildComponentSettings = set(combinatorNameInSettings, undefined, updatedChildComponentSettings);
@@ -195,8 +193,8 @@ const TraceIframe = (iframeSource, iframeId) => vLift(
       src: iframeSource || defaultIFrameSource,
     },
     style: {
-      width: '900px',
-      height: '200px'
+      width: '1000px',
+      height: '400px'
     }
   }, [])
 );
@@ -209,7 +207,6 @@ function adviseApp(traceDef, App) {
       const iframeSource = view(iframeSourceInTraceDef, traceDef);
       const iframeId = view(iframeIdInTraceDef, traceDef);
 
-      debugger
       const tracedApp = Combine({}, [
         TraceIframe(iframeSource, iframeId),
         Combine(traceDef, [App])
@@ -251,38 +248,6 @@ export function traceApp(traceDefSpecs, App) {
 
   return adviseApp(traceDef, App)
 }
-
-/**
- * @param {TraceSpecs} traceSpecs
- * @param {Component} App
- * @return Component Component whose inputs and outputs (i.e. sources and sinks) are traced
- */
-// export function traceAppBasic(traceSpecs, App) {
-//   // will inject _traceSpecs and _helpers (that should be merged without stomping) and _hooks (also merging as much
-//   // as possible). So for now we will do it so that traceDef actually include those helpers and so on.
-//   // We will think about hook overriding and composition when that problem happens
-//   /** @type TraceDef*/
-//   const traceDef = {
-//     _hooks: { preprocessInput, postprocessOutput },
-//     _helpers: { getId },
-//     _trace: {
-//       componentName: TRACE_BOOTSTRAP_NAME,
-//       isTraceEnabled: IS_TRACE_ENABLED_DEFAULT,
-//       isContainerComponent: false,
-//       isLeaf: false,
-//       path: [0],
-//       sendMessage: sendMessage,
-//       onMessage: null, // not used for now
-//       traceSpecs: traceSpecs,
-//       defaultTraceSpecs: [defaultTraceSourceFn, defaultTraceSinkFn]
-//     }
-//   };
-//
-//   return adviseApp(traceDef, App)
-// }
-
-// TODO : test the window messaging and iframe add
-// TODO : write the iframe message reception
 
 /**
  * @typedef {function(source:Source, sourceName:String, settings:Settings):Source} TraceSourceFn

@@ -1,10 +1,9 @@
 import * as Rx from "rx"
-import { complement, isNil, tryCatch } from 'ramda';
-import {
-  assertContract, isFunction, isObservable, isPromise
-} from '../../../contracts/src/index'
+import { assoc, complement, isNil, tryCatch } from 'ramda';
+import { assertContract, isFunction, isObservable, isPromise } from '../../../contracts/src/index'
 import { decorateWithAdvice } from "../../../utils/src"
 import { deconstructTraceFromSettings, makeSourceNotificationMessage } from "../../../tracing/src/helpers"
+
 const $ = Rx.Observable;
 
 // Helper functions
@@ -65,7 +64,6 @@ export function makeDomainQueryDriver(repository, config) {
   }
 }
 
-// TODO
 export function traceQueryDriverSource(sourceFactory, sourceName, settings) {
   // ADR
   // We want to get trace information for each result of action passing through the source
@@ -84,27 +82,27 @@ export function traceQueryDriverSource(sourceFactory, sourceName, settings) {
   const { traceSpecs, defaultTraceSpecs, combinatorName, componentName, sendMessage, path } = deconstructTraceFromSettings(settings);
 
   sourceFactory.getCurrent = decorateWithAdvice({
-    after: function (joinpoint, App) {
-      const { args, returnedValue } = joinpoint;
+    around: function (joinpoint, fnToDecorate) {
+      const { args } = joinpoint;
       const [context, payload] = args;
 
-      return returnedValue
+      return fnToDecorate(context, payload)
         .materialize()
         .tap(notification => sendMessage(makeQuerySourceNotificationMessage(
           { sourceName, settings, notification },
-          {context,          payload}
+          { context, payload }
         )))
         .dematerialize()
-        // Needless to say, action driver is event-based, so share it is
-        .share()
+        // Needless to say, query driver is behaviour-based, so replay it is
+        .shareReplay(1)
     }
   }, sourceFactory.getCurrent);
 
   return sourceFactory
 }
 
-function makeQuerySourceNotificationMessage({ sourceName, settings, notification }, {context,          payload}) {
+function makeQuerySourceNotificationMessage({ sourceName, settings, notification }, { context, payload }) {
   const message = makeSourceNotificationMessage({ sourceName, settings, notification });
 
-  return assoc('details', {context,          payload}, message)
+  return assoc('details', { context, payload }, message)
 }
