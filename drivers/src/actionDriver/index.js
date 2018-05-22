@@ -64,12 +64,13 @@ export function makeDomainActionDriver(repository, config) {
           }))
           .then((actionReponse) => {
             // NOTE : we emit out of the current function to avoid possible re-entry issues
+            // TODO : replace with Rx scheduler currentThread and retest
             setTimeout(function () {eventEmitters[context].onNext(actionReponse);}, 0)
           })
       }
       else {
         // not a promise, hence synchronously returned value or exception from tryCatch
-        // TODO : replace with Rx scheduler currentThread
+        // TODO : replace with Rx scheduler currentThread and retest
         if (isError(actionResult)) {
           setTimeout(function () {eventEmitters[context].onError(actionResult)}, 0)
         }

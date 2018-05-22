@@ -5,7 +5,7 @@ import {
   traceSinks, traceSources
 } from './helpers'
 import {
-  defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME
+  defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME, TARGET_WINDOW_ORIGIN
 } from './properties'
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
@@ -56,7 +56,7 @@ export function makeIFrameMessenger(iframeId) {
 }
 
 function postMessage(window, msg){
-  window.postMessage(JSON.stringify(msg), '*');
+  window.postMessage(JSON.stringify(msg), TARGET_WINDOW_ORIGIN);
 }
 
 // onMessage

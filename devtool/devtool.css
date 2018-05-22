@@ -1,0 +1,33 @@
+.component-tree {
+    grid-area: tree;
+}
+
+.sources {
+    grid-area: sources;
+}
+
+.sinks {
+    grid-area: sinks;
+}
+
+.settings {
+    grid-area: settings;
+}
+
+.graph {
+    grid-area: graph;
+}
+
+.navigation {
+    grid-area: navigation;
+}
+
+.container {
+    display : grid;
+    grid-template-columns: 3fr 1fr 1fr;
+    grid-template-rows: 200px 1fr 1fr;
+    grid-gap: 1rem;
+    width: 750px;
+    height: 600px;
+    grid-template-areas: "tree sources settings " "tree sinks sinks" "graph graph graph " "navigation navigation navigation ";
+}

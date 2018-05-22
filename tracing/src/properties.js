@@ -7,3 +7,4 @@ export const SOURCE_EMISSION = 0;
 export const SINK_EMISSION = 1;
 export const GRAPH_STRUCTURE = 'graph_structure';
 export const RUNTIME = 'runtime';
+export const TARGET_WINDOW_ORIGIN = "*";

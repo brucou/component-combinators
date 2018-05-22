@@ -97,6 +97,7 @@
     "@rxcc/utils": "^0.1.8"
   },
   "dependencies": {
+    "@cycle/core": "^6.0.3",
     "cycle-snabbdom": "^3.0.0",
     "fp-rosetree": "^0.2.3",
     "ramda": "^0.25.0",
