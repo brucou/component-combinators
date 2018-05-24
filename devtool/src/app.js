@@ -23,9 +23,16 @@ const initialState = {
   secondarySelection: undefined,
   sourcesForSelectedTrace: {}, // should start with sources
   sinksForSelectedTrace: {}, // should start with sinks but will be done at another level
-  componentTreeForSelectedTrace: undefined,
-  traces: [],
-  // TODO : something else?
+  // traces are rush-based. For each rush, [tree structure msg] followed by [emission msgs]
+  currentRushIndex : 0,
+  // Will have for each id/msg type the trace msg
+  emissionTracesById : {},
+  treeStructureTracesById : {},
+  // Will keep at rush index the list of id part of the rush, starts with []
+  emissionTraces : [],
+  treeStructureTraces : [],
+// map rush index : tree
+  componentTrees : []
 };
 
 // ! coupled to devtool.css
@@ -44,7 +51,7 @@ export const App = InjectLocalState({
   sourceName: DEVTOOL_SOURCE_NAME,
   initialState: initialState,
 }, [LayoutContainer, [
-  TraceHandler, // will receive a trace and update local state
+  TraceHandler,
   InSlot(NavigationPanelSlot, [TraceNavigationPanel]),
   InSlot(ComponentTreePanelSlot, [ComponentTreePanel]),
   InSlot(SourcesPanelSlot, [SourcesPanel]),
@@ -52,5 +59,3 @@ export const App = InjectLocalState({
   InSlot(SettingsPanelSlot, [SinksPanel]),
   InSlot(GraphPanelSlot, [GraphPanel]),
 ]]);
-
-
