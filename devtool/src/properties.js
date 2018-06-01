@@ -1,1 +1,1 @@
-export const DEVTOOL_SOURCE_NAME = 'devtool_state';
+export const DEVTOOL_STATE_CHANNEL = 'devtool_state';

@@ -1,0 +1,110 @@
+/* Search bar */
+
+.ExplorerView input[type="search"].search{
+    position: absolute;
+    width: 200px;
+    top: 36px;
+    height: 28px;
+    left: 0;
+    background: #f6f6f6;
+    color: #444;
+    border: none;
+    border-bottom: 1px solid #dadada;
+    font-family: Monaco,monospace;
+}
+
+/* Lists */
+
+.ExplorerView ul {
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+    padding-left: 20px;
+    transition: all 0.2s ease-in-out;
+}
+
+.ExplorerView ul.depth-0 {
+    padding: 0px;
+    font-family: Monaco, monospace;
+    font-size: 14px;
+    min-height: 495px;
+}
+
+.ExplorerView li {
+    transition: box-shadow 0.25s;
+}
+
+
+/* Item */
+
+.ExplorerView .item {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    align-items: center;
+    min-width: calc(100% - 5px);
+    padding: 5px 0px 5px 5px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.ExplorerView .item .icon {
+    margin-right: 5px;
+}
+
+.ExplorerView li:hover > .item {
+    background: #e3f2fd;
+}
+.ExplorerView li:hover > .item > a {
+    color: #000;
+}
+
+.ExplorerView li.selected > .item {
+    background: rgb(187,222,251);
+}
+
+.ExplorerView li.category > .item > a {
+    order: 2;
+    flex: 1;
+}
+
+/* Opener */
+
+.ExplorerView .opener {
+    order: 1;
+    margin-right: 7px;
+    font-size: 0.8em;
+    color: #AAA;
+    transition: all 0.3s ease-in-out;
+}
+.ExplorerView li.category:not(.folded) > .item > .opener {
+    color: rgb(230, 74, 25);
+    transform: rotate(90deg);
+}
+.ExplorerView .opener::before {
+    content: "\f054";
+    font-family: FontAwesome;
+    cursor: pointer;
+}
+
+/* Drag'n'drop */
+
+.ExplorerView li.dragover, .ExplorerView ul.dragover {
+    box-shadow: -5px 5px 2px #CCC;
+}
+.ExplorerView ul.dragover {
+    background-color: aliceblue;
+}
+.ExplorerView li.dragover > span.item {
+    background-color: aliceblue;
+}
+.ExplorerView li.nodrop > span.item {
+    /*box-shadow: -5px 5px 2px crimson;*/
+    background-color: rgba(255, 20, 60, 0.1);
+}
+
+/* Responsive */
+
+@media (max-width: 600px) {
+    .ExplorerView ul.depth-0 { min-height: 250px; }
+}

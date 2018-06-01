@@ -1,6 +1,7 @@
 import { removeNullsFromArray } from "../../utils/src"
-import { DEVTOOL_SOURCE_NAME } from "./properties"
+import { DEVTOOL_STATE_CHANNEL } from "./properties"
 import { SINK_EMISSION, SOURCE_EMISSION } from "../../tracing/src"
+import {times, merge} from 'ramda';
 
 const PROCESS_TREE_STRUCTURE_MSG = 'PROCESS_TREE_STRUCTURE_MSG';
 const PROCESS_DATA_EMISSION_MSG = 'PROCESS_DATA_EMISSION_MSG';
@@ -8,11 +9,18 @@ const initialTraceControlState = PROCESS_TREE_STRUCTURE_MSG;
 const TREE_STRUCTURE_MSG = 'TREE_STRUCTURE_MSG';
 const DATA_EMISSION_MSG = 'DATA_EMISSION_MSG';
 
+const  EMPTY_TREE = {cursor : "0", hash : {}};
+
+function array1ToN(n){
+  return Array.apply(null, {length: n}).map(Number.call, Number)
+}
+
 function getTraceMsgLogType(msg) {
   return msg.logType
 }
 
 // TODO : !! edge case with path repeating itself to analyze what to do... nothing for now
+// TODO : clean code of unused constant when finished
 
 /**
  * Updates state for all trace-related components, for each incoming trace message.
@@ -41,7 +49,7 @@ function getTraceMsgLogType(msg) {
 export const TraceHandler = function TraceHandler(sources, settings) {
   // will receive a trace and update local state
   const { crossWindowMessaging$ } = sources;
-  const devtoolState$ = sources[DEVTOOL_SOURCE_NAME];
+  const devtoolState$ = sources[DEVTOOL_STATE_CHANNEL];
   let controlState = initialTraceControlState;
 
   function processTraceStateMachine(traceMsg){
@@ -103,7 +111,7 @@ export const TraceHandler = function TraceHandler(sources, settings) {
     })
 
   return {
-    [DEVTOOL_SOURCE_NAME]: devtoolStateUpdate$
+    [DEVTOOL_STATE_CHANNEL]: devtoolStateUpdate$
   }
 };
 
@@ -180,22 +188,47 @@ function processEmissionMsgWhileInTreeStructureState(traceMsg, devtoolState) {
   const updateTreeStructureTracesById = null;
   const updateTreeStructureTraces = null;
 
-  const treeContent = treeStructureTraces[currentRushIndex].reduce((acc, treeStructureTraceId) =>{
+  // TODO : check that edge case no prev component tree workds fine
+  const prevComponentTree = currentRushIndex > 0 ? componentTrees[currentRushIndex - 1] : EMPTY_TREE;
+  const currentComponentTreePaths = treeStructureTraces[currentRushIndex].map(treeStructureTraceId => {
     const traceMsg = treeStructureTracesById[treeStructureTraceId];
 
-    acc[traceMsg.path] = traceMsg;
+    return traceMsg.path
+  });
+
+  const withRemovedObsoletePaths = currentComponentTreePaths.reduce((acc,currentComponentTreePath) => {
+    // remove all the paths which are same or below currentComponentTreePath
+    return acc.filter(prevComponentTreePath => {
+      return !prevComponentTreePath.contains(currentComponentTreePath)
+    })
+  }, Object.keys(prevComponentTree.hash));
+
+  const withRemovedObsoleteContent = withRemovedObsoletePaths.reduce((acc, prevNonObsoletePath) => {
+    acc[prevNonObsoletePath] = prevComponentTree.hash[prevNonObsoletePath];
+
     return acc
   }, {});
 
-  const tree = {
+  const withNewContent = treeStructureTraces[currentRushIndex].reduce((acc, treeStructureTraceId) => {
+    const traceMsg = treeStructureTracesById[treeStructureTraceId];
+    const newContentPath = traceMsg.path;
+
+    acc[newContentPath] = traceMsg;
+
+    return acc
+  }, {});
+
+  const newTreeContent = merge(withRemovedObsoleteContent, withNewContent);
+
+  const newTree = {
     cursor : '0',
-    hash : treeContent
+    hash : newTreeContent
   };
 
   const updateComponentTrees = {
     op:"add",
-    path : `/treeStructureTraces/${currentRushIndex}`,
-    value : tree
+    path : `/componentTrees/${currentRushIndex}`,
+    value : newTree
   };
 
   const updateEmissionTracesById = {
@@ -372,7 +405,6 @@ function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
       throw `processEmissionMsgWhileInEmissionState > unexpected message emission type (neither source nor sink?) : ${msgType}`
   }
 
-
   return [
     updatePrimarySelection,
     updateSecondarySelection,
@@ -386,3 +418,38 @@ function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
     updateTreeStructureTraces,
   ]
 }
+
+// {
+//   "combinatorName": "Combine",
+//   "componentName": "ROOT",
+//   "id": 0,
+//   "isContainerComponent": false,
+//   "logType": "graph_structure",
+//   "path": [
+//   0
+// ]
+// },
+
+// {
+//   "combinatorName": "InjectCircularSources",
+//   "componentName": "App",
+//   "emits": {
+//   "identifier": "a_circular_behavior_source",
+//     "notification": {
+//     "kind": "N",
+//       "value": {
+//       "dummyKey1InitModel": "dummy2",
+//         "dummyKey3InitModel": "dummy3",
+//         "key": "value"
+//     }
+//   },
+//   "type": 0
+// },
+//   "id": 0,
+//   "logType": "runtime",
+//   "path": [
+//   0,
+//   0
+// ],
+//   "settings": {}
+// },

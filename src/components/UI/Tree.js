@@ -17,13 +17,13 @@ function buildDisplayTreeComponentFrom(lenses, componentTree, settings) {
   const { getChildren, getLabel } = lenses;
   const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = componentTree;
 
-  return function buildDisplayTreeComponent(pathMap, traversalState, tree) {
-    const { path } = traversalState.get(tree);
-    const label = getLabel(tree);
+  return function buildDisplayTreeComponent(pathMap, traversalState, node) {
+    const { path } = traversalState.get(node);
+    const label = getLabel(node);
     const getChildrenNumber = (tree, traversalState) => getChildren(tree, traversalState).length;
     const mappedChildren = times(
       index => pathMap.get(stringify(path.concat(index))),
-      getChildrenNumber(tree, traversalState)
+      getChildrenNumber(node, traversalState)
     );
     const mappedTree = (mappedChildren.length === 0)
       ? m({}, set(combinatorNameInSettings, 'DisplayTree|Inner|Leaf', { path, label }), [TreeLeaf])
@@ -56,6 +56,7 @@ function uiStateFactoryWith(injectedBehaviourName) {
           const strPath = stringify(path);
 
           // update the dependent parts while making sure default values are set
+          // Basically new nodes from new tree are associated to a default UI state, otherwise uiState keeps its values
           return assoc(strPath, mergeAll([defaultUIstateNode, uiState[strPath] || {}, { tree }]), uiState );
         }
       }, newTree)

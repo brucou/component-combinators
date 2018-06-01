@@ -1,4 +1,4 @@
-import { DummyComponent, vLift } from "../../utils/src"
+import { vLift } from "../../utils/src"
 import { TraceNavigationPanel } from './TraceNavigationPanel'
 import { ComponentTreePanel } from './ComponentTreePanel'
 import { SourcesPanel } from './SourcesPanel'
@@ -8,7 +8,7 @@ import { GraphPanel } from './GraphPanel'
 import { InSlot } from "../../src"
 import { div } from "cycle-snabbdom"
 import { InjectLocalState } from "../../src/components/Inject/InjectLocalState"
-import { DEVTOOL_SOURCE_NAME } from "./properties"
+import { DEVTOOL_STATE_CHANNEL } from "./properties"
 import { TraceHandler } from "./TraceHandler"
 
 const NavigationPanelSlot = 'NavigationSlot';
@@ -48,7 +48,7 @@ const LayoutContainer = vLift(
 );
 
 export const App = InjectLocalState({
-  sourceName: DEVTOOL_SOURCE_NAME,
+  sourceName: DEVTOOL_STATE_CHANNEL,
   initialState: initialState,
 }, [LayoutContainer, [
   TraceHandler,

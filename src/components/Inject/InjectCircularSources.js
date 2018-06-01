@@ -100,6 +100,8 @@ export function computeInjectSpec(settings){
           // TODO : pass an error handler in parameter?
           // NOTE : I can also behaviourSink.observeOn(Rx.Scheduler.currentThread), but I prefer this for now for tracing
           // cf. https://github.com/Reactive-Extensions/RxJS/blob/master/doc/api/schedulers/scheduler.md
+          // TODO : pass onNext{value : x, update : command}? command could be delta(x), and it could be easier in
+          // some cases to react on delta than on x
           const disposable = Rx.Scheduler.currentThread.schedule(
             newBehaviourValue,
             function emit(scheduler, x) { behaviourCache = newBehaviourValue, behaviourSource.onNext(x); }

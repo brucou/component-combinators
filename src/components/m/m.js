@@ -528,7 +528,7 @@ function computeSinksWithPerSinkStrategy(mergeSinks, componentTree, extendedSour
  *
  * @param {ComponentDef} _componentDef
  * @param {Settings} __settings
- * @param {Array<Component> | [ContainerComponent, Array<Component>]} _componentTree
+ * @param {ComponentTree} _componentTree
  *
  * @returns {Component}
  * @throws when type- and user-specified contracts are not satisfied

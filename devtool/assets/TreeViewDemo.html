@@ -1,0 +1,122 @@
+<div style="display: inline-block; text-align: left;">
+    <div class="TreeViewDemo">
+        <input type="search" class="search" placeholder="Search ..." value=""
+               autocomplete="off">
+        <span>
+            <ul class="depth-0">
+                <li class="category" draggable="true">
+                    <span class="item">
+                        <a>Animals</a>
+                        <span class="opener"></span>
+                    </span>
+                    <span>
+                        <ul class="depth-1">
+                            <li class="category folded" draggable="true">
+                                <span class="item">
+                                    <a>Insects</a>
+                                    <span class="opener"></span>
+                                </span>
+                                <span></span>
+                            </li>
+                            <li class="category folded" draggable="true">
+                                <span class="item">
+                                    <a>Mammals</a>
+                                    <span class="opener"></span>
+                                </span>
+                                <span></span>
+                            </li>
+                            <li class="category folded" draggable="true">
+                                <span class="item">
+                                    <a>Reptiles</a>
+                                    <span class="opener"></span>
+                                </span>
+                                <span></span>
+                            </li>
+                        </ul>
+                    </span>
+                </li>
+                <li class="category folded async" draggable="true">
+                    <span class="item">
+                        <a>Durations</a>
+                        <span class="opener"></span>
+                    </span>
+                    <span></span>
+                </li>
+                <li class="category folded" draggable="true">
+                    <span class="item">
+                        <a>Fruits</a>
+                        <span class="opener"></span>
+                    </span>
+                    <span></span>
+                </li>
+                <li class="category folded" draggable="true">
+                    <span class="item">
+                        <a>Vegetables</a>
+                        <span class="opener"></span>
+                    </span>
+                    <span></span>
+                </li>
+            </ul>
+        </span>
+    </div>
+</div>
+
+TreeRoot :
+<div class="TreeViewDemo">
+ <span>
+    <ul slot ='node' class="depth-0"></ul>
+ </span>
+</div>
+
+TreeNode :
+<li slot ='node' class = "category folded|[]">
+    <span class="item">
+      <a>{label}</a>
+      <span class="opener"></span>
+    </span>
+        <span>
+      <ul class="depth-{length(path)}" slot ='node'>
+        children slot
+      </ul>
+    </span>
+</li>
+
+TreeLeaf :
+<li slot ='node'>
+    <span class="item">
+      <a>{label}</a>
+      <span class="opener"></span>
+    </span>
+</li>
+
+Example: (learn burma maybe? not now... use flex by mysef does not look too hard)
+<div class="TreeViewDemo">
+	<span>
+		<ul slot='node' class="depth-0">
+			<li slot='node' class="category folded">
+				<span class="container">
+					<span class="combinator">{combinator name}</span>
+					<span class="component">{component name}</span>
+					<span class="toggle">x</span>
+				</span>
+				<span>
+					<ul class="depth-1" slot='node'>
+						<li slot ='node' class="category" >
+							<span class="container">
+								<span class="combinator">{combinator name}</span>
+								<span class="component">{component name}</span>
+							</span>
+						</li>
+					</ul>
+				</span>
+			</li>
+			<li slot ='node' class="category" >
+				<span class="container">
+					<span class="combinator">{combinator name}</span>
+					<span class="component">{component name}</span>
+					<span class="toggle">x</span>
+				</span>
+			</li>
+		</ul>
+	</span>
+</div>
