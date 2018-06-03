@@ -69,11 +69,12 @@ TreeRoot :
 </div>
 
 TreeNode :
-<li slot ='node' class = "category folded|[]">
-    <span class="item">
-      <a>{label}</a>
-      <span class="opener"></span>
-    </span>
+<li slot ='node' class = "(selected) category folded|[]" data-sep = "." data-path = "0">
+				<span class="container">
+					<span class="toggle">x</span>
+					<span class="combinator">{combinator name}</span>
+					<span class="info">{component name}</span>
+				</span>
         <span>
       <ul class="depth-{length(path)}" slot ='node'>
         children slot
@@ -82,29 +83,51 @@ TreeNode :
 </li>
 
 TreeLeaf :
-<li slot ='node'>
-    <span class="item">
-      <a>{label}</a>
-      <span class="opener"></span>
-    </span>
+<li slot ='node' class = "category" data-sep = "." data-path = "...">
+				<span class="container">
+					<span class="toggle">x</span>
+					<span class="combinator">{combinator name}</span>
+					<span class="info">{component name}</span>
+				</span>
 </li>
 
+https://jsfiddle.net/hws0hz3t/
 Example: (learn burma maybe? not now... use flex by mysef does not look too hard)
 <div class="TreeViewDemo">
 	<span>
 		<ul slot='node' class="depth-0">
 			<li slot='node' class="category folded">
 				<span class="container">
-					<span class="combinator">{combinator name}</span>
-					<span class="component">{component name}</span>
 					<span class="toggle">x</span>
+					<span class="combinator">{combinator name}</span>
+					<span class="info">{component name}</span>
 				</span>
 				<span>
 					<ul class="depth-1" slot='node'>
 						<li slot ='node' class="category" >
 							<span class="container">
+								<span class="toggle">x</span>
 								<span class="combinator">{combinator name}</span>
-								<span class="component">{component name}</span>
+								<span class="trace"></span>
+								<span class="info">{component name}</span>
+							</span>
+						</li>
+						<li slot ='node' class="category" >
+							<span class="container">
+								<span class="toggle">x</span>
+								<span class="combinator">{combinator name}</span>
+								<span class="trace">{icon+selected source/sink}</span>
+								<span class="info">{component other name}</span>
+								<ul class="depth-1" slot='node'>
+									<li slot ='node' class="category" >
+										<span class="container">
+											<span class="toggle">x</span>
+											<span class="combinator">{combinator name}</span>
+											<span class="trace"></span>
+											<span class="info">{component name}</span>
+										</span>
+									</li>
+								</ul>
 							</span>
 						</li>
 					</ul>
@@ -112,9 +135,9 @@ Example: (learn burma maybe? not now... use flex by mysef does not look too hard
 			</li>
 			<li slot ='node' class="category" >
 				<span class="container">
-					<span class="combinator">{combinator name}</span>
-					<span class="component">{component name}</span>
 					<span class="toggle">x</span>
+					<span class="combinator">{combinator name}</span>
+					<span class="info">{component name}</span>
 				</span>
 			</li>
 		</ul>

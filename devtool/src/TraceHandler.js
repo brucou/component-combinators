@@ -6,14 +6,10 @@ import {times, merge} from 'ramda';
 const PROCESS_TREE_STRUCTURE_MSG = 'PROCESS_TREE_STRUCTURE_MSG';
 const PROCESS_DATA_EMISSION_MSG = 'PROCESS_DATA_EMISSION_MSG';
 const initialTraceControlState = PROCESS_TREE_STRUCTURE_MSG;
-const TREE_STRUCTURE_MSG = 'TREE_STRUCTURE_MSG';
-const DATA_EMISSION_MSG = 'DATA_EMISSION_MSG';
+const TREE_STRUCTURE_MSG = 'graph_structure';
+const DATA_EMISSION_MSG = 'runtime';
 
 const  EMPTY_TREE = {cursor : "0", hash : {}};
-
-function array1ToN(n){
-  return Array.apply(null, {length: n}).map(Number.call, Number)
-}
 
 function getTraceMsgLogType(msg) {
   return msg.logType
@@ -102,7 +98,8 @@ export const TraceHandler = function TraceHandler(sources, settings) {
   }
 
   const devtoolStateUpdate$ = crossWindowMessaging$.withLatestFrom(devtoolState$)
-    .map((traceMsg, devtoolState) => {
+    .map(([strTraceMsg, devtoolState]) => {
+      const traceMsg = JSON.parse(strTraceMsg);
       // State machine which as always takes an input, and returns an action, while updating internal state
       // (here `controlState` in closure)
       const action = processTraceStateMachine(traceMsg)

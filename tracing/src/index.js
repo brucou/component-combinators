@@ -36,6 +36,13 @@ export function makeIFrameMessenger(iframeId) {
   let buffer = [];
 
   function sendMessage(msg) {
+    // TODO : invert it, wait for devtool to be ready before sending message...
+    // devtoo : get parent window and send a ready message (to all, '*', or pass parameter parent domain in settings)
+    // sendMessage has in closure a subject.
+    // incoming$.bufferWhen(till parent wimdow emit one and only ready).subscribe(postmessage to iframe)
+    // note that every buffer passs an array so inline that in subscribe
+    // also after closing, every single message must pass (or maybe have a close/open protocol??)
+    // 1 by one when open, buffer when close, so it is a state machine (a switch concretely)
     iframeEl = iframeEl || document.querySelector(iFrameId);
     if (!iframeEl) {
       buffer.push(msg);

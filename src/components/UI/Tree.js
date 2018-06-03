@@ -2,7 +2,7 @@ import { assertContract } from "../../../contracts/src"
 import { InjectCircularSources } from "../Inject/InjectCircularSources"
 import { InjectSources, InjectSourcesAndSettings } from "../.."
 import { ForEach } from "../ForEach"
-import { isNil, mergeAll, set, T, times , assoc} from 'ramda'
+import { assoc, isNil, mergeAll, set, T, times } from 'ramda'
 import { PATH_ROOT } from "../../../tracing/src/properties"
 import { BFS, postOrderTraverseTree, reduceTree } from 'fp-rosetree'
 import { m } from "../m"
@@ -57,7 +57,7 @@ function uiStateFactoryWith(injectedBehaviourName) {
 
           // update the dependent parts while making sure default values are set
           // Basically new nodes from new tree are associated to a default UI state, otherwise uiState keeps its values
-          return assoc(strPath, mergeAll([defaultUIstateNode, uiState[strPath] || {}, { tree }]), uiState );
+          return assoc(strPath, mergeAll([defaultUIstateNode, uiState[strPath] || {}, { tree }]), uiState);
         }
       }, newTree)
 
@@ -99,7 +99,7 @@ function DisplayTree(displayTreeSettings, componentTree) {
   }
 }
 
-export function getInjectedBehaviourName(localStateSource){
+export function getInjectedBehaviourName(localStateSource) {
   return 'B$' + localStateSource
 }
 
@@ -110,23 +110,27 @@ export function Tree(_treeSettings, arrayComponents) {
   const { treeSettings } = _treeSettings;
   const { treeSource, localStateSource, localTreeSetting, defaultUIstateNode, localCommandSpecs, lenses, sinkNames } = treeSettings;
   const [TreeEmpty, TreeRoot, TreeNode, TreeLeaf] = arrayComponents;
-  const { source: localCommandSource, executeFn } = localCommandSpecs;
+  const { source: localCommandSource, executeFn } = localCommandSpecs
+    ? { source: localCommandSpecs.source, executeFn: localCommandSpecs.executeFn }
+    : { source: undefined, executeFn: undefined };
 
   const initialUserInterfaceState = {};
   const injectedBehaviourName = getInjectedBehaviourName(localStateSource);
   const injectedBehaviourConfig = {
-    behaviourSourceName : injectedBehaviourName,
+    behaviourSourceName: injectedBehaviourName,
     initialBehaviorValue: initialUserInterfaceState,
-    processingBehaviourFn : (patchCommands, behaviourCache) => {
+    processingBehaviourFn: (patchCommands, behaviourCache) => {
       return jsonpatch.applyPatch(behaviourCache, patchCommands).newDocument
-    } ,
-    finalizeBehaviourSource : (behaviourCache) => behaviourCache = null
+    },
+    finalizeBehaviourSource: (behaviourCache) => behaviourCache = null
   };
-  const injectedEventConfig = {
-    eventSourceName : localCommandSource,
-    processingEventFn : executeFn,
-    finalizeEventSource : () => {}
-  };
+  const injectedEventConfig = executeFn
+    ? {
+      eventSourceName: localCommandSource,
+      processingEventFn: executeFn,
+      finalizeEventSource: () => {}
+    }
+    : undefined;
 
   const component =
     InjectSourcesAndSettings({ settings: _treeSettings }, [

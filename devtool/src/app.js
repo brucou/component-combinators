@@ -51,7 +51,7 @@ export const App = InjectLocalState({
   sourceName: DEVTOOL_STATE_CHANNEL,
   initialState: initialState,
 }, [LayoutContainer, [
-  TraceHandler,
+  TraceHandler, // updates the devtool state according to incoming messages
   InSlot(NavigationPanelSlot, [TraceNavigationPanel]),
   InSlot(ComponentTreePanelSlot, [ComponentTreePanel]),
   InSlot(SourcesPanelSlot, [SourcesPanel]),

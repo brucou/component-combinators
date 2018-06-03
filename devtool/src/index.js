@@ -33,6 +33,7 @@ const postWindowLoad = new Promise((resolve, reject) => {
       observable.onNext(event.data);
     });
 
+    debugger
     clearTimeout(timerId);
     resolve();
   }
@@ -75,9 +76,6 @@ function makeWindowMessagingDriver(windowMessagingSubject) {
 }
 
 function makeGraphRenderDriver(maybePassAgraphSelector){
-  // TODO : does render has to be delayed a tad, for DOM sink to render first the divs with the graph selector??
-  // unless I render here
-  // unless I use a facet graph (could be slow to refresh though?)
   return function (sink$) {
     sink$.subscribe(({context, command, params}) => {
       // TODO : code to run the graph library with the data. params has the data, command is render, context is ?
