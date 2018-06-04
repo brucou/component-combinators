@@ -6,7 +6,7 @@ import {
 } from './helpers'
 import {
   defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, READY,
-  TARGET_WINDOW_ORIGIN, TRACE_BOOTSTRAP_NAME
+  TRACE_BOOTSTRAP_NAME
 } from './properties'
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
@@ -20,6 +20,10 @@ export * from './properties'
 export * from './contracts'
 
 const maxBufferSize = 40960;
+const WAIT_FOR_READY = 'WAIT_FOR_READY';
+const EMIT_NOW = 'EMIT_NOW';
+const IFRAME_MSG = 'iframeMsg';
+const EMIT_ME_MSG = 'emitMeMsg';
 
 let graphCounter = 0;
 
@@ -44,20 +48,58 @@ function receiveMessageFromIFrame(IFrameReceivingEndSubject) {
   }
 }
 
+function passToBufferStateMachine(acc, iframeReadyOrMsgToEmit) {
+  const event = Object.keys(iframeReadyOrMsgToEmit)[0];
+
+  switch (acc.controlState) {
+    case WAIT_FOR_READY :
+      switch (event) {
+        case IFRAME_MSG :
+          acc.shouldEmit = true;
+          acc.controlState = EMIT_NOW;
+          // Keeping track of the iframe origin to avoid security pitfall with iframe communication
+          acc.origin = iframeReadyOrMsgToEmit[IFRAME_MSG];
+          break;
+        case EMIT_ME_MSG :
+          if (acc.buffer.length > maxBufferSize) throw `makeIFrameMessenger : buffer overflow!!`
+          acc.buffer.push(iframeReadyOrMsgToEmit[EMIT_ME_MSG]);
+          acc.shouldEmit = false;
+          acc.controlState = WAIT_FOR_READY;
+          break;
+        default :
+          throw `makeIFrameMessenger > incoming message received has unknown type! ${event}`
+      }
+      break;
+    case EMIT_NOW :
+      switch (event) {
+        case IFRAME_MSG :
+          // Should not happen : only one READY message expected from iframe
+          throw `received iframe msg while awaiting only for trace messages to emit to iframe!`
+          break;
+        case EMIT_ME_MSG :
+          acc.buffer = [iframeReadyOrMsgToEmit[EMIT_ME_MSG]];
+          acc.shouldEmit = true;
+          acc.controlState = EMIT_NOW;
+          break;
+        default :
+          throw `makeIFrameMessenger > incoming message received has unknown type! ${event}`
+      }
+      break;
+    default :
+      throw `makeIFrameMessenger > incoming message received while in unknown control state : ${acc.controlState}`
+  }
+
+  return acc
+}
+
 export function makeIFrameMessenger(iframeId) {
   /**
    * Sends a message to the devtool iframe
    * @param {*} msg Anything which can be JSON.stringified
    */
   const iFrameId = iframeId || defaultIFrameId;
-  let iframeEl;
-  let buffer = [];
   const iframeReceivingEnd = new Rx.Subject();
   const parentWindowEmittingEnd = new Rx.Subject();
-  const WAIT_FOR_READY = 'WAIT_FOR_READY';
-  const EMIT_NOW = 'EMIT_NOW';
-  const IFRAME_MSG = 'iframeMsg';
-  const EMIT_ME_MSG= 'emitMeMsg';
 
   // Adds the event listerner
   // NOTE : adding the same listener several times is fine, subsequent additions will be discarded
@@ -65,54 +107,15 @@ export function makeIFrameMessenger(iframeId) {
   // In any case, that function will only be executed at most once per `run` execution, so we are good anyways
   window.addEventListener("message", receiveMessageFromIFrame(iframeReceivingEnd), false);
 
-  iframeReceivingEnd.map(x => ({[IFRAME_MSG]: x}))
-    .merge(parentWindowEmittingEnd.map(x => ({[EMIT_ME_MSG]: x})))
-    .scan(function (acc, iframeReadyOrMsgToEmit){
-      const {buffer, shouldEmit, controlState} = acc;
-      const event = Object.keys(iframeReadyOrMsgToEmit)[0];
-
-      switch (controlState){
-        case WAIT_FOR_READY :
-          switch (event){
-            case IFRAME_MSG :
-              acc.shouldEmit = true;
-              acc.controlState = EMIT_NOW;
-              // Keeping track of the iframe origin to avoid security pitfall with iframe communication
-              acc.origin = iframeReadyOrMsgToEmit[IFRAME_MSG];
-              break;
-            case EMIT_ME_MSG :
-              acc.buffer.push(iframeReadyOrMsgToEmit[EMIT_ME_MSG]);
-              acc.shouldEmit = false;
-              acc.controlState = WAIT_FOR_READY;
-              break;
-            default :
-              throw `makeIFrameMessenger > incoming message received has unknown type! ${event}`
-          }
-          break;
-        case EMIT_NOW :
-          switch (event){
-            case IFRAME_MSG :
-              // Should not happen : only one READY message expected from iframe
-              throw `received iframe msg while awaiting only for trace messages to emit to iframe!`
-              break;
-            case EMIT_ME_MSG :
-              acc.buffer=[iframeReadyOrMsgToEmit[EMIT_ME_MSG]];
-              acc.shouldEmit = true;
-              acc.controlState = EMIT_NOW;
-              break;
-            default :
-              throw `makeIFrameMessenger > incoming message received has unknown type! ${event}`
-          }
-          break;
-        default :
-          throw `makeIFrameMessenger > incoming message received while in unknown control state : ${controlState}`
-      }
-
-      return acc
-    }, {buffer : [], shouldEmit : false, origin : '*', controlState : WAIT_FOR_READY})
+  iframeReceivingEnd.map(x => ({ [IFRAME_MSG]: x }))
+    .merge(parentWindowEmittingEnd.map(x => ({ [EMIT_ME_MSG]: x })))
+    .scan(passToBufferStateMachine, { buffer: [], shouldEmit: false, origin: '*', controlState: WAIT_FOR_READY })
     .filter(x => x.shouldEmit)
     .subscribe(
-      x => {const iframeEl = document.querySelector(iFrameId); postMessages(iframeEl.contentWindow, x.origin, x.buffer)},
+      x => {
+        const iframeEl = document.querySelector(iFrameId);
+        postMessages(iframeEl.contentWindow, x.origin, x.buffer)
+      },
       err => {throw `makeIFrameMessenger > Encountered err while processing iframe and parent messaging !?`},
       () => {}
     );
