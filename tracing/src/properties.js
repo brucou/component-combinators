@@ -8,3 +8,4 @@ export const SINK_EMISSION = 1;
 export const GRAPH_STRUCTURE = 'graph_structure';
 export const RUNTIME = 'runtime';
 export const TARGET_WINDOW_ORIGIN = "*";
+export const READY = 'READY';

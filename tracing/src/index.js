@@ -5,7 +5,8 @@ import {
   traceSinks, traceSources
 } from './helpers'
 import {
-  defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, TRACE_BOOTSTRAP_NAME, TARGET_WINDOW_ORIGIN
+  defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, READY,
+  TARGET_WINDOW_ORIGIN, TRACE_BOOTSTRAP_NAME
 } from './properties'
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
@@ -26,6 +27,23 @@ function getGraphCounter() { return graphCounter++}
 
 export function resetGraphCounter() { graphCounter = 0}
 
+function receiveMessageFromIFrame(IFrameReceivingEndSubject) {
+  return function receiveMessageFromIFrame(event) {
+    const { origin, source, data } = event;
+
+    // NOTE : no filtering of origin, in spite of potential security issues : use only in DEV!
+    // Send the ready message
+    if (data.type === READY) {
+      IFrameReceivingEndSubject.onNext(origin);
+      return
+    }
+    else {
+      // Ignore other messages for now
+      return
+    }
+  }
+}
+
 export function makeIFrameMessenger(iframeId) {
   /**
    * Sends a message to the devtool iframe
@@ -34,36 +52,78 @@ export function makeIFrameMessenger(iframeId) {
   const iFrameId = iframeId || defaultIFrameId;
   let iframeEl;
   let buffer = [];
+  const iframeReceivingEnd = new Rx.Subject();
+  const parentWindowEmittingEnd = new Rx.Subject();
+  const WAIT_FOR_READY = 'WAIT_FOR_READY';
+  const EMIT_NOW = 'EMIT_NOW';
+  const IFRAME_MSG = 'iframeMsg';
+  const EMIT_ME_MSG= 'emitMeMsg';
 
-  function sendMessage(msg) {
-    // TODO : invert it, wait for devtool to be ready before sending message...
-    // devtoo : get parent window and send a ready message (to all, '*', or pass parameter parent domain in settings)
-    // sendMessage has in closure a subject.
-    // incoming$.bufferWhen(till parent wimdow emit one and only ready).subscribe(postmessage to iframe)
-    // note that every buffer passs an array so inline that in subscribe
-    // also after closing, every single message must pass (or maybe have a close/open protocol??)
-    // 1 by one when open, buffer when close, so it is a state machine (a switch concretely)
-    iframeEl = iframeEl || document.querySelector(iFrameId);
-    if (!iframeEl) {
-      buffer.push(msg);
-      if (buffer.length > maxBufferSize) throw `tracing > makeIFrameMessenger > sendMessage : exceeded buffer size!`
-    }
-    else {
-      // Make sure you are sending a string, and to stringify JSON
-      // NOTE : also possible to pass a sequence of Transferable objects with the message
-      buffer.forEach(msg => postMessage(iframeEl.contentWindow, msg));
-      // Empty buffer, now that we sent the messages in it
-      buffer = [];
-      // Post the pending message
-      postMessage(iframeEl.contentWindow, msg);
-    }
+  // Adds the event listerner
+  // NOTE : adding the same listener several times is fine, subsequent additions will be discarded
+  // cf. https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+  // In any case, that function will only be executed at most once per `run` execution, so we are good anyways
+  window.addEventListener("message", receiveMessageFromIFrame(iframeReceivingEnd), false);
+
+  iframeReceivingEnd.map(x => ({[IFRAME_MSG]: x}))
+    .merge(parentWindowEmittingEnd.map(x => ({[EMIT_ME_MSG]: x})))
+    .scan(function (acc, iframeReadyOrMsgToEmit){
+      const {buffer, shouldEmit, controlState} = acc;
+      const event = Object.keys(iframeReadyOrMsgToEmit)[0];
+
+      switch (controlState){
+        case WAIT_FOR_READY :
+          switch (event){
+            case IFRAME_MSG :
+              acc.shouldEmit = true;
+              acc.controlState = EMIT_NOW;
+              // Keeping track of the iframe origin to avoid security pitfall with iframe communication
+              acc.origin = iframeReadyOrMsgToEmit[IFRAME_MSG];
+              break;
+            case EMIT_ME_MSG :
+              acc.buffer.push(iframeReadyOrMsgToEmit[EMIT_ME_MSG]);
+              acc.shouldEmit = false;
+              acc.controlState = WAIT_FOR_READY;
+              break;
+            default :
+              throw `makeIFrameMessenger > incoming message received has unknown type! ${event}`
+          }
+          break;
+        case EMIT_NOW :
+          switch (event){
+            case IFRAME_MSG :
+              // Should not happen : only one READY message expected from iframe
+              throw `received iframe msg while awaiting only for trace messages to emit to iframe!`
+              break;
+            case EMIT_ME_MSG :
+              acc.buffer=[iframeReadyOrMsgToEmit[EMIT_ME_MSG]];
+              acc.shouldEmit = true;
+              acc.controlState = EMIT_NOW;
+              break;
+            default :
+              throw `makeIFrameMessenger > incoming message received has unknown type! ${event}`
+          }
+          break;
+        default :
+          throw `makeIFrameMessenger > incoming message received while in unknown control state : ${controlState}`
+      }
+
+      return acc
+    }, {buffer : [], shouldEmit : false, origin : '*', controlState : WAIT_FOR_READY})
+    .filter(x => x.shouldEmit)
+    .subscribe(
+      x => {const iframeEl = document.querySelector(iFrameId); postMessages(iframeEl.contentWindow, x.origin, x.buffer)},
+      err => {throw `makeIFrameMessenger > Encountered err while processing iframe and parent messaging !?`},
+      () => {}
+    );
+
+  return function sendMessage(msg) {
+    parentWindowEmittingEnd.onNext(msg)
   }
-
-  return sendMessage
 }
 
-function postMessage(window, msg){
-  window.postMessage(JSON.stringify(msg), TARGET_WINDOW_ORIGIN);
+function postMessages(window, origin, msgs) {
+  msgs.forEach(msg => window.postMessage(JSON.stringify(msg), origin));
 }
 
 // onMessage
