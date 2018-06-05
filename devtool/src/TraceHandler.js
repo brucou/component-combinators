@@ -1,7 +1,7 @@
 import { removeNullsFromArray } from "../../utils/src"
-import { DEVTOOL_STATE_CHANNEL } from "./properties"
+import { DEVTOOL_STATE_CHANNEL, SEP } from "./properties"
 import { SINK_EMISSION, SOURCE_EMISSION } from "../../tracing/src"
-import {times, merge} from 'ramda';
+import { flatten, merge, range } from 'ramda';
 
 const PROCESS_TREE_STRUCTURE_MSG = 'PROCESS_TREE_STRUCTURE_MSG';
 const PROCESS_DATA_EMISSION_MSG = 'PROCESS_DATA_EMISSION_MSG';
@@ -9,7 +9,7 @@ const initialTraceControlState = PROCESS_TREE_STRUCTURE_MSG;
 const TREE_STRUCTURE_MSG = 'graph_structure';
 const DATA_EMISSION_MSG = 'runtime';
 
-const  EMPTY_TREE = {cursor : "0", hash : {}};
+const EMPTY_TREE = { cursor: "0", hash: {} };
 
 function getTraceMsgLogType(msg) {
   return msg.logType
@@ -48,7 +48,7 @@ export const TraceHandler = function TraceHandler(sources, settings) {
   const devtoolState$ = sources[DEVTOOL_STATE_CHANNEL];
   let controlState = initialTraceControlState;
 
-  function processTraceStateMachine(traceMsg){
+  function processTraceStateMachine(traceMsg) {
     let action;
 
     switch (getTraceMsgLogType(traceMsg)) {
@@ -98,8 +98,7 @@ export const TraceHandler = function TraceHandler(sources, settings) {
   }
 
   const devtoolStateUpdate$ = crossWindowMessaging$.withLatestFrom(devtoolState$)
-    .map(([strTraceMsg, devtoolState]) => {
-      const traceMsg = JSON.parse(strTraceMsg);
+    .map(([traceMsg, devtoolState]) => {
       // State machine which as always takes an input, and returns an action, while updating internal state
       // (here `controlState` in closure)
       const action = processTraceStateMachine(traceMsg)
@@ -139,11 +138,21 @@ function processIncomingTreeMsgWhileInTreeStructureState(traceMsg, devtoolState)
   const updateEmissionTraces = null;
   // emissionTraces intact
 
-  const updateTreeStructureTraces = {
+  const updateTreeStructureTracesAtIndex = {
     op: "add",
     path: `/treeStructureTraces/${currentRushIndex}/${index}`,
     value: traceMsg.id
   };
+  const updateTreeStructureTraces = treeStructureTraces[currentRushIndex]
+    ? updateTreeStructureTracesAtIndex
+    : [
+      {
+        op: "add",
+        path: `/treeStructureTraces/${currentRushIndex}`,
+        value: []
+      },
+      updateTreeStructureTracesAtIndex
+    ]
 
   const updateTreeStructureTracesById = {
     op: "add",
@@ -151,7 +160,7 @@ function processIncomingTreeMsgWhileInTreeStructureState(traceMsg, devtoolState)
     value: traceMsg
   }
 
-  return [
+  return flatten([
     updatePrimarySelection,
     updateSecondarySelection,
     updateSourcesForSelectedTrace,
@@ -162,7 +171,7 @@ function processIncomingTreeMsgWhileInTreeStructureState(traceMsg, devtoolState)
     updateTreeStructureTracesById,
     updateEmissionTraces,
     updateTreeStructureTraces,
-  ]
+  ])
 }
 
 function processEmissionMsgWhileInTreeStructureState(traceMsg, devtoolState) {
@@ -193,10 +202,10 @@ function processEmissionMsgWhileInTreeStructureState(traceMsg, devtoolState) {
     return traceMsg.path
   });
 
-  const withRemovedObsoletePaths = currentComponentTreePaths.reduce((acc,currentComponentTreePath) => {
+  const withRemovedObsoletePaths = currentComponentTreePaths.reduce((acc, currentComponentTreePath) => {
     // remove all the paths which are same or below currentComponentTreePath
     return acc.filter(prevComponentTreePath => {
-      return !prevComponentTreePath.contains(currentComponentTreePath)
+      return !prevComponentTreePath.startsWith(currentComponentTreePath.join(SEP))
     })
   }, Object.keys(prevComponentTree.hash));
 
@@ -218,56 +227,80 @@ function processEmissionMsgWhileInTreeStructureState(traceMsg, devtoolState) {
   const newTreeContent = merge(withRemovedObsoleteContent, withNewContent);
 
   const newTree = {
-    cursor : '0',
-    hash : newTreeContent
+    cursor: '0',
+    hash: newTreeContent
   };
 
   const updateComponentTrees = {
-    op:"add",
-    path : `/componentTrees/${currentRushIndex}`,
-    value : newTree
+    op: "add",
+    path: `/componentTrees/${currentRushIndex}`,
+    value: newTree
   };
 
   const updateEmissionTracesById = {
-    op : "add",
-    path : `/emissionTracesById/${traceMsg.id}`,
-    value : traceMsg
+    op: "add",
+    path: `/emissionTracesById/${traceMsg.id}`,
+    value: traceMsg
   };
 
-  const updateEmissionTraces = {
+  const updateEmissionTraces = [{
+    op: "add",
+    path: `/emissionTraces/${currentRushIndex}`,
+    value: []
+  }, {
     op: "add",
     path: `/emissionTraces/${currentRushIndex}/0`,
     value: traceMsg.id
-  };
+  }];
 
   const msgType = traceMsg.emits.type;
 
   let updateSourcesForSelectedTrace, updateSinksForSelectedTrace;
 
-  switch (msgType){
+  switch (msgType) {
     case  SOURCE_EMISSION :
-       updateSinksForSelectedTrace = null;
-       updateSourcesForSelectedTrace = {
-         op : "add",
-         path : `/sourcesForSelectedTrace/${currentRushIndex}/${traceMsg.path}`,
-         value : traceMsg
-       }
+      updateSinksForSelectedTrace = null;
+      const updateSourcesForSelectedTraceAtPathIndex = {
+        op: "add",
+        path: `/sourcesForSelectedTrace/${currentRushIndex}/${traceMsg.path.join(SEP)}`,
+        value: traceMsg
+      };
+      updateSourcesForSelectedTrace = sourcesForSelectedTrace[currentRushIndex]
+        ? updateSourcesForSelectedTraceAtPathIndex
+        : [
+          {
+            op: "add",
+            path: `/sourcesForSelectedTrace/${currentRushIndex}`,
+            value: []
+          },
+          updateSourcesForSelectedTraceAtPathIndex
+        ]
+      debugger
       break;
 
     case SINK_EMISSION :
       updateSourcesForSelectedTrace = null;
-      updateSinksForSelectedTrace = {
-        op : "add",
-        path : `/sinksForSelectedTrace/${currentRushIndex}/${traceMsg.path}`,
-        value : traceMsg
-      }
+      const updateSinksForSelectedTraceAtPathIndex = {
+        op: "add",
+        path: `/sinksForSelectedTrace/${currentRushIndex}/${traceMsg.path.join(SEP)}`,
+        value: traceMsg
+      };
+
+      updateSinksForSelectedTrace = sinksForSelectedTrace[currentRushIndex]
+        ? updateSinksForSelectedTraceAtPathIndex
+        : range(sinksForSelectedTrace.length, currentRushIndex + 1).map(index => ({
+          op: "add",
+          path: `/sinksForSelectedTrace/${index}`,
+          value: []
+        }))
+          .concat(updateSinksForSelectedTraceAtPathIndex);
       break;
 
     default :
       throw `processEmissionMsgWhileInTreeStructureState > unexpected message emission type (neither source nor sink?) : ${msgType}`
   }
 
-  return [
+  return flatten([
     updatePrimarySelection,
     updateSecondarySelection,
     updateSourcesForSelectedTrace,
@@ -278,7 +311,7 @@ function processEmissionMsgWhileInTreeStructureState(traceMsg, devtoolState) {
     updateTreeStructureTracesById,
     updateEmissionTraces,
     updateTreeStructureTraces,
-  ]
+  ])
 }
 
 function processIncomingTreeMsgWhileInEmissionState(traceMsg, devtoolState) {
@@ -307,16 +340,20 @@ function processIncomingTreeMsgWhileInEmissionState(traceMsg, devtoolState) {
 
   const newRushIndex = currentRushIndex + 1
   const updateCurrentRushIndex = {
-    op : "add",
-    path : "/currentRushIndex",
-    value : newRushIndex
+    op: "add",
+    path: "/currentRushIndex",
+    value: newRushIndex
   };
 
-  const updateTreeStructureTraces = {
+  const updateTreeStructureTraces = [{
+    op: "add",
+    path: `/treeStructureTraces/${newRushIndex}`,
+    value: []
+  }, {
     op: "add",
     path: `/treeStructureTraces/${newRushIndex}/0`,
     value: traceMsg.id
-  };
+  }];
 
   const updateTreeStructureTracesById = {
     op: "add",
@@ -324,7 +361,7 @@ function processIncomingTreeMsgWhileInEmissionState(traceMsg, devtoolState) {
     value: traceMsg
   }
 
-  return [
+  return flatten([
     updatePrimarySelection,
     updateSecondarySelection,
     updateSourcesForSelectedTrace,
@@ -335,7 +372,7 @@ function processIncomingTreeMsgWhileInEmissionState(traceMsg, devtoolState) {
     updateTreeStructureTracesById,
     updateEmissionTraces,
     updateTreeStructureTraces,
-  ]
+  ])
 }
 
 function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
@@ -364,9 +401,9 @@ function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
   // emissionTraces intact
 
   const updateEmissionTracesById = {
-    op : "add",
-    path : `/emissionTracesById/${traceMsg.id}`,
-    value : traceMsg
+    op: "add",
+    path: `/emissionTracesById/${traceMsg.id}`,
+    value: traceMsg
   };
 
   const updateEmissionTraces = {
@@ -379,30 +416,47 @@ function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
 
   let updateSourcesForSelectedTrace, updateSinksForSelectedTrace;
 
-  switch (msgType){
+  switch (msgType) {
     case  SOURCE_EMISSION :
       updateSinksForSelectedTrace = null;
-      updateSourcesForSelectedTrace = {
-        op : "add",
-        path : `/sourcesForSelectedTrace/${currentRushIndex}/${traceMsg.path}`,
-        value : traceMsg
-      }
+      const updateSourcesForSelectedTraceAtPathIndex = {
+        op: "add",
+        path: `/sourcesForSelectedTrace/${currentRushIndex}/${traceMsg.path}`,
+        value: traceMsg
+      };
+      updateSourcesForSelectedTrace = sourcesForSelectedTrace[currentRushIndex]
+        ? updateSourcesForSelectedTraceAtPathIndex
+        : range(sourcesForSelectedTrace.length, currentRushIndex + 1).map(index => ({
+          op: "add",
+          path: `/sourcesForSelectedTrace/${index}`,
+          value: []
+        }))
+          .concat(updateSourcesForSelectedTraceAtPathIndex);
+      debugger
       break;
 
     case SINK_EMISSION :
       updateSourcesForSelectedTrace = null;
-      updateSinksForSelectedTrace = {
-        op : "add",
-        path : `/sinksForSelectedTrace/${currentRushIndex}/${traceMsg.path}`,
-        value : traceMsg
-      }
+      const updateSinksForSelectedTraceAtPathIndex = {
+        op: "add",
+        path: `/sinksForSelectedTrace/${currentRushIndex}/${traceMsg.path}`,
+        value: traceMsg
+      };
+      updateSinksForSelectedTrace = sinksForSelectedTrace[currentRushIndex]
+        ? updateSinksForSelectedTraceAtPathIndex
+        : range(sinksForSelectedTrace.length, currentRushIndex + 1).map(index => ({
+          op: "add",
+          path: `/sinksForSelectedTrace/${index}`,
+          value: []
+        }))
+          .concat(updateSinksForSelectedTraceAtPathIndex);
       break;
 
     default :
       throw `processEmissionMsgWhileInEmissionState > unexpected message emission type (neither source nor sink?) : ${msgType}`
   }
 
-  return [
+  return flatten([
     updatePrimarySelection,
     updateSecondarySelection,
     updateSourcesForSelectedTrace,
@@ -413,7 +467,7 @@ function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
     updateTreeStructureTracesById,
     updateEmissionTraces,
     updateTreeStructureTraces,
-  ]
+  ])
 }
 
 // {

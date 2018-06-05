@@ -19,10 +19,10 @@ const SettingsPanelSlot = 'SettingsPanelSlot';
 const GraphPanelSlot = 'GraphPanelSlot';
 
 const initialState = {
-  primarySelection: undefined,
+  primarySelection: 0, // TODO : review this later, I put 0 now as id
   secondarySelection: undefined,
-  sourcesForSelectedTrace: {}, // should start with sources
-  sinksForSelectedTrace: {}, // should start with sinks but will be done at another level
+  sourcesForSelectedTrace: [], // should start with sources
+  sinksForSelectedTrace: [], // should start with sinks but will be done at another level
   // traces are rush-based. For each rush, [tree structure msg] followed by [emission msgs]
   currentRushIndex : 0,
   // Will have for each id/msg type the trace msg

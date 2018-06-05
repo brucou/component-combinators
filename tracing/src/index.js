@@ -126,7 +126,7 @@ export function makeIFrameMessenger(iframeId) {
 }
 
 function postMessages(window, origin, msgs) {
-  msgs.forEach(msg => window.postMessage(JSON.stringify(msg), origin));
+    window.postMessage(JSON.stringify(msgs), origin)
 }
 
 // onMessage

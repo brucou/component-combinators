@@ -26,10 +26,11 @@ const postWindowLoad = new Promise((resolve, reject) => {
       mainWindowOrigin = event.origin;
 
       // Emit the message on the observer side of the subject so it can be read on the observable side
-      observable.onNext(event.data);
+      const msgs = JSON.parse(event.data);
+      console.warn('event data', msgs);
+      msgs.forEach(msg => observable.onNext(msg))
     });
 
-    debugger
     clearTimeout(timerId);
     resolve();
   }

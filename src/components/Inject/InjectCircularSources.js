@@ -102,7 +102,7 @@ export function computeInjectSpec(settings){
           // cf. https://github.com/Reactive-Extensions/RxJS/blob/master/doc/api/schedulers/scheduler.md
           // TODO : pass onNext{value : x, update : command}? command could be delta(x), and it could be easier in
           // some cases to react on delta than on x
-          const disposable = Rx.Scheduler.currentThread.schedule(
+          Rx.Scheduler.currentThread.schedule(
             newBehaviourValue,
             function emit(scheduler, x) { behaviourCache = newBehaviourValue, behaviourSource.onNext(x); }
           );
