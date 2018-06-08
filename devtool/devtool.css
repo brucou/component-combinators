@@ -31,3 +31,28 @@
     height: 600px;
     grid-template-areas: "tree sources settings " "tree sinks sinks" "graph graph graph " "navigation navigation navigation ";
 }
+
+.component-tree__container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap : no-wrap;
+    padding: 2px ;
+}
+
+ul.no-list-style {
+    list-style-type: none
+}
+
+.component-tree__container .toggle {
+    width : 10px
+}
+.component-tree__container .combinator {
+    flex-basis : 30%;
+    flex-grow : 3;
+}
+.component-tree__container .trace {
+}
+.component-tree__container .info {
+    width : 10em
+}
+

@@ -1,18 +1,20 @@
 import { DOM_SINK, vLift } from "../../utils/src"
-import { DEVTOOL_STATE_CHANNEL } from "./properties"
-import { componentNameInSettings } from "../../tracing/src"
+import { DEVTOOL_STATE_CHANNEL, SELECTED_STATE_CHANNEL, SEP } from "./properties"
+import { componentNameInSettings, SOURCE_EMISSION } from "../../tracing/src"
 import { set } from 'ramda'
 import { Tree } from "../../src/components/UI"
 import { getHashedTreeLenses } from 'fp-rosetree';
-import { div, li, span } from "cycle-snabbdom"
+import { div, ul, li, span } from "cycle-snabbdom"
 import { InjectSources } from "../../src"
+import * as Rx from "rx";
+const $ = Rx.Observable;
 
 const LOCAL_STATE_SOURCE_NAME = 'ComponentTreePanelStateChannel'; // state for displayed tree, modifyable by components
 const TREE_SOURCE_NAME = 'ComponentTreeSource'; // source of trees
 const componentTreeLenses = getHashedTreeLenses('.');
 
 const COMPONENT_TREE_PANEL_ROOT_WRAPPER_SELECTOR = ".depth-0";
-const COMPONENT_TREE_PANEL_CONTAINER_SELECTOR = "component-tree-view";
+const COMPONENT_TREE_PANEL_CONTAINER_SELECTOR = ".component-tree-view";
 const COMBINATOR_SECTION_SELECTOR = '.combinator';
 const COMPONENT_NAME_SECTION_SELECTOR = '.info';
 const EMITTED_MESSAGE_SECTION_SELECTOR = '.trace';
@@ -23,14 +25,13 @@ const SELECTED_SELECTOR = '.selected';
 const NOT_SELECTED_SELECTOR = '';
 const NOT_FOLDED_SELECTOR = "";
 const EXPAND_SELECTOR = ".toggle";
-const FLEX_CONTAINER_SELECTOR = '.container';
+const FLEX_CONTAINER_SELECTOR = '.component-tree__container';
 // cf. https://www.w3schools.com/charsets/ref_utf_arrows.asp
 const UPWARDS_DOUBLE_ARROW = "\u21D1";
 const DOWNWARDS_DOUBLE_ARROW = "\u21D3";
 
 const COMPONENT_TREE_NODE_SLOT = "component_tree_node_slot";
 const PATH_ATTRIBUTE = 'path';
-const SEP = ".";
 
 function hasCollapsedAncestor(uiState, strPath) {
   const paths = Object.keys(uiState).filter(path => strPath.startsWith(path));
@@ -88,13 +89,13 @@ function TreeRoot(sources, settings) {
 
 
   const actions = {
-    renderTreeContainer: div(COMPONENT_TREE_PANEL_CONTAINER_SELECTOR, [
+    renderTreeContainer: $.of(div(COMPONENT_TREE_PANEL_CONTAINER_SELECTOR, [
       span([
         ul(COMPONENT_TREE_PANEL_ROOT_WRAPPER_SELECTOR, {
-          data: { slot: COMPONENT_TREE_NODE_SLOT }
+          slot: COMPONENT_TREE_NODE_SLOT
         })
       ])
-    ]),
+    ])),
     updateState: events.click$
       .withLatestFrom(uiState$)
       .map((path, uiState) => {
@@ -114,51 +115,56 @@ function TreeRoot(sources, settings) {
   }
 }
 
+// TODO : why pass by empty tree temporarily??
+// TODO : also investigate seT(...name, settings) prefixed with WITH path info, so inheritance vs. new create is diff.
 function TreeNode(sources, settings) {
   const { treeSettings: { localTreeSetting, localStateSource } } = settings;
   const uiState$ = sources[localStateSource];
+  const userSelection$ = sources[SELECTED_STATE_CHANNEL];
+  const devtoolState$ = sources[DEVTOOL_STATE_CHANNEL];
   const { path, label } = settings;
   const treeStructureTraceMsg = label.label;
   const { combinatorName, componentName, id: treeStructureId, isContainerComponent } = treeStructureTraceMsg;
 
-  const devToolState = settings[localTreeSetting];
-  const {
-    // TODO : write separately data model, in fact those will be types doc for each prop of devToolState
-    primarySelection, // TODO : primary selection is an emission message id
-    secondarySelection,
-    sourcesForSelectedTrace,
-    sinksForSelectedTrace,
-    currentRushIndex,
-    emissionTracesById,
-    treeStructureTracesById,
-    treeStructureTraces,
-    emissionTraces,
-    componentTrees
-  } = devToolState;
-  const selectedTraceMsg = emissionTraces[primarySelection];
-  // This shape is for trace messages with data emission logType
-  const { emits, id: selectedTraceId, path: selectedTraceMsgPath } = selectedTraceMsg;
-  const { identifier, notification, type } = emits;
-  const iconEmissionDirection = type === SOURCE_EMISSION ? UPWARDS_DOUBLE_ARROW : DOWNWARDS_DOUBLE_ARROW;
+  // TODO : write separately data model, in fact those will be types doc for each prop of devToolState
 
   return {
-    [DOM_SINK]: uiState$.map(uiState => {
+    [DOM_SINK]: userSelection$.withLatestFrom(devtoolState$, uiState$, (userSelection, devtoolState, uiState) => {
+      const {primarySelection, secondarySelection} = userSelection;
+      const {
+        sourcesForSelectedTrace,
+        sinksForSelectedTrace,
+        currentRushIndex,
+        emissionTracesById,
+        treeStructureTracesById,
+        treeStructureTraces,
+        emissionTraces,
+        componentTrees
+      } = devtoolState;
       const strPath = path.join(SEP);
+      const selectedTraceMsg = emissionTracesById[primarySelection];
+      const { emits, id: selectedTraceId, path: selectedTraceMsgPath, settings: traceMsgSettings } = selectedTraceMsg;
+      const { identifier, notification, type } = emits;
+      const iconEmissionDirection = type === SOURCE_EMISSION ? DOWNWARDS_DOUBLE_ARROW: UPWARDS_DOUBLE_ARROW ;
+
       const isFolded = !uiState[strPath].isExpanded;
       const isSelected = strPath === selectedTraceMsgPath.join(SEP);
       const foldedClass = isFolded ? FOLDED_SELECTOR : NOT_FOLDED_SELECTOR;
       const selectedClass = isSelected ? SELECTED_SELECTOR : NOT_SELECTED_SELECTOR;
-      const containerComponentClass = isContainerComponent ? CONTAINER_COMPONENT_SELECTOR : NOT_CONTAINER_COMPONENT_SELECTOR;
+      const containerComponentClass = isContainerComponent
+        ? CONTAINER_COMPONENT_SELECTOR
+        : NOT_CONTAINER_COMPONENT_SELECTOR;
 
       if (hasCollapsedAncestor(uiState, path.join(SEP))) {
         return null
       }
       else {
-        return li(`${selectedClass}${foldedClass}`, {
+        // NOTE : we put something random (`.li`) because snabddom overloading causes problem with empty strings as sel
+        return li(`.node${selectedClass}${foldedClass}`, {
           attrs: {
-            "path": path,
+            "path": path.join(SEP),
           },
-          data: { slot: COMPONENT_TREE_NODE_SLOT }
+          slot: COMPONENT_TREE_NODE_SLOT
         }, [
           span(`${FLEX_CONTAINER_SELECTOR}${containerComponentClass}`, [
             span(EXPAND_SELECTOR, [isFolded ? `x` : `-`]),
@@ -170,8 +176,8 @@ function TreeNode(sources, settings) {
             span(COMPONENT_NAME_SECTION_SELECTOR, [`${componentName}`]) // TODO : if repeated from above do not repeat
           ]),
           span([
-            ul(`.depth-${length(path)}`, {
-              data: { slot: COMPONENT_TREE_NODE_SLOT }
+            ul(`.depth-${path.length}.no-list-style`, {
+              slot: COMPONENT_TREE_NODE_SLOT
             }, [])
           ])
         ])
@@ -183,21 +189,31 @@ function TreeNode(sources, settings) {
 function TreeLeaf(sources, settings) {
   const { treeSettings: { localTreeSetting, localStateSource } } = settings;
   const uiState$ = sources[localStateSource];
+  const userSelection$ = sources[SELECTED_STATE_CHANNEL];
+  const devtoolState$ = sources[DEVTOOL_STATE_CHANNEL];
   const { path, label } = settings;
   const treeStructureTraceMsg = label.label;
   const { componentName, id: treeStructureId, isContainerComponent } = treeStructureTraceMsg;
 
-  const devToolState = settings[localTreeSetting];
-  const { primarySelection, emissionTraces } = devToolState;
-  const selectedTraceMsg = emissionTraces[primarySelection];
-  // This shape is for trace messages with data emission logType
-  const { emits, id: selectedTraceId, path: selectedTraceMsgPath, settings: traceMsgSettings } = selectedTraceMsg;
-  const { identifier, notification, type } = emits;
-  const iconEmissionDirection = type === SOURCE_EMISSION ? UPWARDS_DOUBLE_ARROW : DOWNWARDS_DOUBLE_ARROW;
-
   return {
-    [DOM_SINK]: uiState$.map(uiState => {
+    [DOM_SINK]: userSelection$.withLatestFrom(devtoolState$, uiState$, (userSelection, devtoolState, uiState) => {
+      const {primarySelection, secondarySelection} = userSelection;
+      const {
+        sourcesForSelectedTrace,
+        sinksForSelectedTrace,
+        currentRushIndex,
+        emissionTracesById,
+        treeStructureTracesById,
+        treeStructureTraces,
+        emissionTraces,
+        componentTrees
+      } = devtoolState;
       const strPath = path.join(SEP);
+      const selectedTraceMsg = emissionTracesById[primarySelection];
+      const { emits, id: selectedTraceId, path: selectedTraceMsgPath, settings: traceMsgSettings } = selectedTraceMsg;
+      const { identifier, notification, type } = emits;
+      const iconEmissionDirection = type === SOURCE_EMISSION ? UPWARDS_DOUBLE_ARROW : DOWNWARDS_DOUBLE_ARROW;
+
       const isSelected = strPath === selectedTraceMsgPath.join(SEP);
       const foldedClass = NOT_FOLDED_SELECTOR;
       const selectedClass = isSelected ? SELECTED_SELECTOR : NOT_SELECTED_SELECTOR;
@@ -209,15 +225,15 @@ function TreeLeaf(sources, settings) {
         return null
       }
       else {
-        return li(`${selectedClass}${foldedClass}`, {
+        return li(`.leaf${selectedClass}${foldedClass}`, {
           attrs: {
-            "path": path,
+            "path": path.join(SEP),
           },
-          data: { slot: COMPONENT_TREE_NODE_SLOT }
+          slot: COMPONENT_TREE_NODE_SLOT
         }, [
           span(`${FLEX_CONTAINER_SELECTOR}${containerComponentClass}`, [
             span(EXPAND_SELECTOR, [`-`]),
-            span(COMBINATOR_SECTION_SELECTOR, [`------`]),
+            span(COMBINATOR_SECTION_SELECTOR, [`-.-.- `]),
             // If emitted trace message coincides with node path then display there which source/sink it relates to
             isSelected
               ? span(EMITTED_MESSAGE_SECTION_SELECTOR, [`${selectedTraceId}${iconEmissionDirection}${identifier}`])
@@ -237,6 +253,12 @@ const componentTreeSource$ = function (sources, settings) {
 
       return componentTrees[currentRushIndex]
     })
+    .distinctUntilChanged()
+    .tap(x => {
+      debugger
+    })
+    .share()
+//    .shareReplay(1) // it is an event
 }
 
 export const ComponentTreePanel = InjectSources({ [TREE_SOURCE_NAME]: componentTreeSource$ }, [

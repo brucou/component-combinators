@@ -1,14 +1,13 @@
 import * as Rx from 'rx'
 import { filterNull } from "../../utils/src"
-import { makeDomainActionDriver } from '@rxcc/drivers';
 import { DOM_SINK } from "@rxcc/utils"
 import { makeDOMDriver } from "cycle-snabbdom"
 import { run } from "@cycle/core"
 import defaultModules from "cycle-snabbdom/lib/modules"
 import { documentDriver } from "../../drivers/src/documentDriver"
 import {App} from './app'
+import { READY } from "../../tracing/src"
 
-const $ = Rx.Observable;
 const maxWindowLoadWaitingTime = 5000;
 
 const postWindowLoad = new Promise((resolve, reject) => {
@@ -16,24 +15,22 @@ const postWindowLoad = new Promise((resolve, reject) => {
   const timerId  = setTimeout(reject, maxWindowLoadWaitingTime);
 
   window.onload = function() {
+    // Notifying parent window that iframe is ready to receive messages
+    // NOTE : we don't put an origin for this initial message - could be some security risks - use only in DEV!
+    window.parent.postMessage({type: READY}, '*');
+
     // Setup an event listener that calls receiveMessage() when the window
     // receives a new MessageEvent.
     window.addEventListener('message', function receiveMessage(event) {
-      // Check sender identity to avoid cross-scriping attacks
-      // cf. https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
-      // if (event.origin !== TARGET_WINDOW_ORIGIN)
-      //   return;
-      // TODO : origin for the iframe window should be the http address for devtool.html. But what is that?? Use the
-      // github or gitraw address?? Check when all is finished, for now don't check sender identity
-
       mainWindow = event.source;
       mainWindowOrigin = event.origin;
 
       // Emit the message on the observer side of the subject so it can be read on the observable side
-      observable.onNext(event.data);
+      const msgs = JSON.parse(event.data);
+      console.warn('event data', msgs);
+      msgs.forEach(msg => observable.onNext(msg))
     });
 
-    debugger
     clearTimeout(timerId);
     resolve();
   }

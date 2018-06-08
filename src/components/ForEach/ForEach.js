@@ -31,7 +31,7 @@ function computeSinks(parentComponent, childrenComponents, sources, settings) {
 
   const shouldSwitch$ = switchSource
     .do(function (incomingValue) {
-      console.info(`${settings.trace} > ForEach > New value from source ${from}`, format(incomingValue));
+      console.info(`${settings.trace} > ForEach > New value from source ${from}`, incomingValue);
       console.info(`${settings.trace} > ForEach > Computing the associated sinks`);
 
       const switchedComponent = m(
