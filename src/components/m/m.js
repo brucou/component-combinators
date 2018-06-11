@@ -14,7 +14,7 @@
  * @property {?String} trace
  */
 /**
- * @typedef {?Object} DetailedComponentDef
+ * @typedef {Object} DetailedComponentDef
  * @property {?function(Sources, Settings)} makeLocalSources
  * @property {?function(Settings)} makeLocalSettings
  * @property {?function(Sources, Settings)} makeOwnSinks
@@ -23,7 +23,7 @@
  * @property {?function(Sources, Settings):Boolean} checkPreConditions
  */
 /**
- * @typedef {?Object} ShortComponentDef
+ * @typedef {Object} ShortComponentDef
  * @property {?function(Sources, Settings)} makeLocalSources
  * @property {?function(Settings)} makeLocalSettings
  * @property {?function(Sources, Settings, Array<Component>)} makeAllSinks
@@ -32,10 +32,16 @@
  * @property {?function(Sources, Settings):Boolean} checkPreConditions
  */
 /**
+ * @typedef {{} | ShortComponentDef | DetailedComponentDef} ComponentDef
+ */
+/**
  * @typedef {function(Sources, Settings):Sinks} Component
  */
 /**
  *@typedef {Component} ContainerComponent
+ */
+/**
+ * @typedef [Array<Component> | [Component, Array<Component>]] ComponentTree
  */
 
 import { COMBINE_ALL_SINKS_SPECS, COMBINE_GENERIC_SPECS, COMBINE_PER_SINK_SPECS } from './properties'
@@ -550,6 +556,12 @@ function m(_componentDef, __settings, _componentTree) {
 
   console.groupEnd();
 
+  /**
+   *
+   * @param {Sources} sources
+   * @param {Settings} _innerSettings
+   * @returns {Sinks}
+   */
   function mComponent(sources, _innerSettings) {
     // Computes settings to pass down the component tree
     const innerSettings = _innerSettings || {};

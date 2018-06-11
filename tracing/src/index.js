@@ -169,8 +169,8 @@ function addTraceInfoToComponent(path) {
             // - tap its sources and sinks here and now
             sendMessage({
               logType: GRAPH_STRUCTURE,
-              componentName: getFunctionName(component),
-              combinatorName: undefined,
+              componentName: getFunctionName(component) || "",
+              combinatorName: "",
               isContainerComponent: isContainerComponent,
               when: +Date.now(),
               path: path.concat([index]),
@@ -263,8 +263,8 @@ const TraceIframe = (iframeSource, iframeId) => vLift(
       src: iframeSource || defaultIFrameSource,
     },
     style: {
-      width: '1000px',
-      height: '400px'
+      width: '100%',
+      height: '600px'
     }
   }, [])
 );

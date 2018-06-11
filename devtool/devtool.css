@@ -27,8 +27,7 @@
     grid-template-columns: 3fr 1fr 1fr;
     grid-template-rows: 200px 1fr 1fr;
     grid-gap: 1rem;
-    width: 750px;
-    height: 600px;
+    height: 400px;
     grid-template-areas: "tree sources settings " "tree sinks sinks" "graph graph graph " "navigation navigation navigation ";
 }
 
@@ -56,3 +55,8 @@ ul.no-list-style {
     width : 10em
 }
 
+.icon {
+    width: 16px;
+    height: 16px;
+    margin: 4px;
+}

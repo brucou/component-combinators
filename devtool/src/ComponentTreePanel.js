@@ -57,23 +57,11 @@ const TreeEmpty = vLift(div(`Empty component tree?`));
 function TreeRoot(sources, settings) {
   const { treeSettings: { localTreeSetting, localStateSource } } = settings;
   const uiState$ = sources[localStateSource];
-  const devToolState = settings[localTreeSetting];
-  const {
-    primarySelection,
-    secondarySelection,
-    sourcesForSelectedTrace,
-    sinksForSelectedTrace,
-    currentRushIndex,
-    emissionTracesById,
-    treeStructureTracesById,
-    treeStructureTraces,
-    emissionTraces,
-    componentTrees
-  } = devToolState;
 
   const events = {
     click$: sources[DOM_SINK].select(COMPONENT_TREE_PANEL_CONTAINER_SELECTOR).events('click')
       .map(e => {
+        // TODO : does not work!!
         const element = e.target.closest(`${COMPONENT_TREE_PANEL_CONTAINER_SELECTOR} li`);
         if (element && element.getAttribute(PATH_ATTRIBUTE)) {
           const path = element.getAttribute(PATH_ATTRIBUTE);
@@ -115,7 +103,6 @@ function TreeRoot(sources, settings) {
   }
 }
 
-// TODO : why pass by empty tree temporarily??
 // TODO : also investigate seT(...name, settings) prefixed with WITH path info, so inheritance vs. new create is diff.
 function TreeNode(sources, settings) {
   const { treeSettings: { localTreeSetting, localStateSource } } = settings;
@@ -126,15 +113,12 @@ function TreeNode(sources, settings) {
   const treeStructureTraceMsg = label.label;
   const { combinatorName, componentName, id: treeStructureId, isContainerComponent } = treeStructureTraceMsg;
 
-  // TODO : write separately data model, in fact those will be types doc for each prop of devToolState
-
   return {
     [DOM_SINK]: userSelection$.withLatestFrom(devtoolState$, uiState$, (userSelection, devtoolState, uiState) => {
       const {primarySelection, secondarySelection} = userSelection;
       const {
         sourcesForSelectedTrace,
         sinksForSelectedTrace,
-        currentRushIndex,
         emissionTracesById,
         treeStructureTracesById,
         treeStructureTraces,
@@ -192,8 +176,9 @@ function TreeLeaf(sources, settings) {
   const userSelection$ = sources[SELECTED_STATE_CHANNEL];
   const devtoolState$ = sources[DEVTOOL_STATE_CHANNEL];
   const { path, label } = settings;
+  /** @type TreeStructureMsg */
   const treeStructureTraceMsg = label.label;
-  const { componentName, id: treeStructureId, isContainerComponent } = treeStructureTraceMsg;
+  const { componentName, combinatorName, id: treeStructureId, isContainerComponent } = treeStructureTraceMsg;
 
   return {
     [DOM_SINK]: userSelection$.withLatestFrom(devtoolState$, uiState$, (userSelection, devtoolState, uiState) => {
@@ -233,7 +218,8 @@ function TreeLeaf(sources, settings) {
         }, [
           span(`${FLEX_CONTAINER_SELECTOR}${containerComponentClass}`, [
             span(EXPAND_SELECTOR, [`-`]),
-            span(COMBINATOR_SECTION_SELECTOR, [`-.-.- `]),
+            // TODO : investigate why it does not display -.-. anymore for real leaves
+            span(COMBINATOR_SECTION_SELECTOR, [`${combinatorName || componentName || '????'}`]),
             // If emitted trace message coincides with node path then display there which source/sink it relates to
             isSelected
               ? span(EMITTED_MESSAGE_SECTION_SELECTOR, [`${selectedTraceId}${iconEmissionDirection}${identifier}`])
@@ -249,14 +235,11 @@ function TreeLeaf(sources, settings) {
 const componentTreeSource$ = function (sources, settings) {
   return sources[DEVTOOL_STATE_CHANNEL]
     .map(devtoolState => {
-      const { currentRushIndex, componentTrees } = devtoolState;
+      const {  selectionRushIndex, componentTrees } = devtoolState;
 
-      return componentTrees[currentRushIndex]
+      return componentTrees[selectionRushIndex]
     })
     .distinctUntilChanged()
-    .tap(x => {
-      debugger
-    })
     .share()
 //    .shareReplay(1) // it is an event
 }

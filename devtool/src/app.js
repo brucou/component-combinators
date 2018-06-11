@@ -18,9 +18,11 @@ const SinksPanelSlot = 'SinksPanelSlot';
 const SettingsPanelSlot = 'SettingsPanelSlot';
 const GraphPanelSlot = 'GraphPanelSlot';
 
+/** @type DevtoolState*/
 const initialState = {
   primarySelection: 0, // TODO : review this later, I put 0 now as id
   secondarySelection: undefined,
+  selectionRushIndex : 0,
   sourcesForSelectedTrace: [], // should start with sources
   sinksForSelectedTrace: [], // should start with sinks but will be done at another level
   // traces are rush-based. For each rush, [tree structure msg] followed by [emission msgs]
@@ -53,7 +55,7 @@ function getSelectedChannelState(sources, settings) {
       primarySelection: devtoolState.primarySelection,
       secondarySelection: devtoolState.secondarySelection,
     }))
-    .distinctUntilChanged(
+    .distinctUntilChanged( x => x,
       (a, b) => (a && a.primarySelection === b && b.primarySelection ) &&
         (a && a.secondarySelection === b && b.secondarySelection)
     )

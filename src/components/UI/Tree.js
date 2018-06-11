@@ -89,11 +89,9 @@ function DisplayTree(displayTreeSettings, componentTree) {
         tree
       );
       const displayTreeComponent = pathMap.get(stringify(PATH_ROOT));
-      //  pathMap.clear(); don't clear, so use a weakmap, we will need this for all the life time of the component
-
-      // Actually the root has already been dealt with as a regular node. This gives an opportunity to wrap the
-      // component up as necessary (in additional to convenient html wrapping tags, `TreeRoot` could also gather event
-      // handling for all nodes)
+      // DOC : `TreeRoot` is actually a wrapper for the whole tree, including the root. The root node itself is
+      // dealth with like any other node in the tree. **TIP** : can be used for styling, and/or handling events
+      // for all nodes in one place
       return m({}, set(combinatorNameInSettings, 'DisplayTree|Inner', {}), [TreeRoot, [displayTreeComponent]])(sources, settings)
     }
   }
