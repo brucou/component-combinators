@@ -55,6 +55,15 @@ ul.no-list-style {
     width : 10em
 }
 
+.component-tree__container.is-container-component {
+    background-color: gray;
+    opacity: .8;
+}
+
+.completed-notification {
+    color : orange;
+}
+
 .icon {
     width: 16px;
     height: 16px;

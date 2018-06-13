@@ -34,13 +34,12 @@ export const SEP = '.';
  * @typedef {Object} RunTrace
  * @property {SOURCE_TYPE | SINK_TYPE} type Encodes whether the trace for the data flow is a source or a sink
  * @property {String} identifier dxxxxxthe trace for the data flow is a source or a sink
- * @property {RunTraceNoification} notification sxxx
+ * @property {RunTraceNotification} notification sxxx
  */
 /**
- * @typedef {Object} RunTraceNoification
+ * @typedef {Object} RunTraceNotification
  * @property {"N" | "E" | "C"} kind Encodes whether the trace for the data flow is an error, completion, or mext meesage
  * @property {*} value the actual data emitted (in case of a data message) for the traced emission
- * @property {RunTraceNoification} notification sxxx
  */
 /**
  * @typedef {Number} SOURCE_TYPE

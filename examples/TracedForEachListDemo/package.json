@@ -55,7 +55,7 @@
     "ramda": "^0.25.0",
     "rx": "^4.1.0",
     "localforage": "^1.5.0",
-    "@rxcc/components": "0.4.3",
+    "@rxcc/components": "0.4.4",
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/drivers": "~0.1.9",
     "@rxcc/testing": "^0.1.3",

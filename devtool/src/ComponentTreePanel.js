@@ -26,6 +26,15 @@ const NOT_SELECTED_SELECTOR = '';
 const NOT_FOLDED_SELECTOR = "";
 const EXPAND_SELECTOR = ".toggle";
 const FLEX_CONTAINER_SELECTOR = '.component-tree__container';
+const EMITTED_MESSAGE_NEXT_SELECTOR = '.next-notification';
+const EMITTED_MESSAGE_ERROR_SELECTOR = '.error-notification';
+const EMITTED_MESSAGE_COMPLETED_SELECTOR = '.completed-notification';
+const EMITTED_MESSAGE_TYPE_SELECTOR = {
+  N: EMITTED_MESSAGE_NEXT_SELECTOR,
+  E: EMITTED_MESSAGE_ERROR_SELECTOR,
+  C : EMITTED_MESSAGE_COMPLETED_SELECTOR
+};
+
 // cf. https://www.w3schools.com/charsets/ref_utf_arrows.asp
 const UPWARDS_DOUBLE_ARROW = "\u21D1";
 const DOWNWARDS_DOUBLE_ARROW = "\u21D3";
@@ -126,9 +135,11 @@ function TreeNode(sources, settings) {
         componentTrees
       } = devtoolState;
       const strPath = path.join(SEP);
+      /** @type EmissionMsg*/
       const selectedTraceMsg = emissionTracesById[primarySelection];
       const { emits, id: selectedTraceId, path: selectedTraceMsgPath, settings: traceMsgSettings } = selectedTraceMsg;
       const { identifier, notification, type } = emits;
+      const { kind, value} = notification;
       const iconEmissionDirection = type === SOURCE_EMISSION ? DOWNWARDS_DOUBLE_ARROW: UPWARDS_DOUBLE_ARROW ;
 
       const isFolded = !uiState[strPath].isExpanded;
@@ -152,10 +163,12 @@ function TreeNode(sources, settings) {
         }, [
           span(`${FLEX_CONTAINER_SELECTOR}${containerComponentClass}`, [
             span(EXPAND_SELECTOR, [isFolded ? `x` : `-`]),
-            span(COMBINATOR_SECTION_SELECTOR, [`${combinatorName}`]),
+            span(COMBINATOR_SECTION_SELECTOR, [isSelected ? `${selectedTraceMsg.combinatorName}` : `${combinatorName}`]),
             // If emitted trace message coincides with node path then display there which source/sink is related
             isSelected
-              ? span(EMITTED_MESSAGE_SECTION_SELECTOR, [`${selectedTraceId}${iconEmissionDirection}${identifier}`])
+              ? span(`${EMITTED_MESSAGE_SECTION_SELECTOR}${EMITTED_MESSAGE_TYPE_SELECTOR[kind]}`, [
+                `${selectedTraceId}${iconEmissionDirection}${identifier}`
+              ])
               : span(EMITTED_MESSAGE_SECTION_SELECTOR, []),
             span(COMPONENT_NAME_SECTION_SELECTOR, [`${componentName}`]) // TODO : if repeated from above do not repeat
           ]),
@@ -197,7 +210,7 @@ function TreeLeaf(sources, settings) {
       const selectedTraceMsg = emissionTracesById[primarySelection];
       const { emits, id: selectedTraceId, path: selectedTraceMsgPath, settings: traceMsgSettings } = selectedTraceMsg;
       const { identifier, notification, type } = emits;
-      const iconEmissionDirection = type === SOURCE_EMISSION ? UPWARDS_DOUBLE_ARROW : DOWNWARDS_DOUBLE_ARROW;
+      const iconEmissionDirection = type === SOURCE_EMISSION ? DOWNWARDS_DOUBLE_ARROW: UPWARDS_DOUBLE_ARROW;
 
       const isSelected = strPath === selectedTraceMsgPath.join(SEP);
       const foldedClass = NOT_FOLDED_SELECTOR;
