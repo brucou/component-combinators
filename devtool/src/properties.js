@@ -18,6 +18,8 @@ export const SEP = '.';
 /**
  * @typedef {Object} EmissionMsg
  * @property {String} combinatorName For instance ListOf, ForEach, etc.
+ * @property {String} componentName Name given to the component which may or may not be furher broken down into a
+ * component tree
  * @property {RunTrace} emits Name given to the component which may or may not be furher broken down into a
  * component tree
  * @property {String} id Id for the message

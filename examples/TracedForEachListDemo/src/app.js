@@ -62,7 +62,6 @@ export const App = InjectSources({
 const traceConfig = {
   _trace: {
     traceSpecs: {
-      // TODO : test that domainAction$  and domainQuery trace aspects are well set
       // TODO : maybe use [identity, identity] for sources whose trace functions are not specified
       // or modify spces for injectSources to specify if behaviour or events, that is the best... but then I would
       // have to somehow propagate nature of the source or sink? or modify _trace
