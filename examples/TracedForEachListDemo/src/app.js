@@ -5,11 +5,9 @@ import { AspirationalPageHeader } from "./AspirationalPageHeader"
 import { Card } from "./Card"
 import { CARDS, PAGE } from "./domain/index"
 import { Pagination } from "./Pagination"
-import { path } from 'ramda'
-import {
-  defaultIFrameSource, defaultIFrameId, makeIFrameMessenger, traceApp, traceDOMsinkFn, getIdFactory
-} from "../../../tracing/src"
-import { traceBehaviourSourceFn, traceEventSinkFn, traceEventSourceFn } from "../../../tracing/src/helpers"
+import { path, set } from 'ramda'
+import { componentNameInSettings, defaultIFrameId, getIdFactory, traceApp, traceDOMsinkFn } from "../../../tracing/src"
+import { traceBehaviourSourceFn, traceEventSinkFn } from "../../../tracing/src/helpers"
 import { traceActionDriverSource } from "../../../drivers/src/actionDriver"
 import { traceQueryDriverSource } from "../../../drivers/src/queryDriver"
 
@@ -34,30 +32,35 @@ function fetchPageNumber(sources, settings) {
     .tap(x => console.debug(`fetchPageNumber > domainQuery > PAGE :`, x))
 }
 
-export const App = InjectSources({
+const DisplayCards = ForEach(set(componentNameInSettings, 'DisplayCards', {
+    from: 'fetchedCardsInfo$',
+    as: 'items',
+    sinkNames: [DOM_SINK],
+    trace: 'ForEach card'
+  }), [AspirationalPageHeader, [
+    ListOf({ list: 'items', as: 'cardInfo', trace: 'ForEach card > ListOf' }, [
+      EmptyComponent,
+      Card,
+    ])
+  ]]
+);
+
+const PaginateCards = ForEach(set(componentNameInSettings, 'PaginateCards', {
+  from: 'fetchedPageNumber$',
+  as: 'pageNumber',
+  sinkNames: [DOM_SINK, 'domainAction$']
+}), [
+  Pagination
+]);
+
+export const App = InjectSources({ //set(componentNameInSettings, 'App', { TODO : BUG
   fetchedCardsInfo$: fetchCardsInfo,
   fetchedPageNumber$: fetchPageNumber
 }, [
-  ForEach({
-      from: 'fetchedCardsInfo$',
-      as: 'items',
-      sinkNames: [DOM_SINK],
-      trace: 'ForEach card'
-    }, [AspirationalPageHeader, [
-      ListOf({ list: 'items', as: 'cardInfo', trace: 'ForEach card > ListOf' }, [
-        EmptyComponent,
-        Card,
-      ])
-    ]]
-  ),
-  ForEach({
-    from: 'fetchedPageNumber$',
-    as: 'pageNumber',
-    sinkNames: [DOM_SINK, 'domainAction$']
-  }, [
-    Pagination
-  ])
+  DisplayCards,
+  PaginateCards
 ]);
+
 
 const traceConfig = {
   _trace: {
@@ -67,17 +70,17 @@ const traceConfig = {
       // have to somehow propagate nature of the source or sink? or modify _trace
       // and what about those sinks? inject sources a priori there is no corresponding sinks, so always use identity
       // this should figure in contract : no sink can exist with the name of an injected source
-      'document' : [identity, identity],
+      'document': [identity, identity],
       'domainQuery': [traceQueryDriverSource, identity],
       'domainAction$': [traceActionDriverSource, traceEventSinkFn],
-      'fetchedCardsInfo$' : [traceBehaviourSourceFn, identity],
-      'fetchedPageNumber$' : [traceBehaviourSourceFn, identity],
+      'fetchedCardsInfo$': [traceBehaviourSourceFn, identity],
+      'fetchedPageNumber$': [traceBehaviourSourceFn, identity],
       [DOM_SINK]: [identity, traceDOMsinkFn],
     },
     // sendMessage: ..., // not set : will use default which is to emit in iframe with contentWindow.postMessage
-    iframeId : defaultIFrameId,
+    iframeId: defaultIFrameId,
     // NOTE TO SELF: this is with respect to index.html
-    iframeSource : '../../devtool/devtool.html'
+    iframeSource: '../../devtool/devtool.html'
   },
   _helpers: { getId: getIdFactory() }
 };

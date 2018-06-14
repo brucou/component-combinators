@@ -11,7 +11,7 @@ import {
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
 import { iframe } from "cycle-snabbdom"
-import { path, pathOr, set, view } from 'ramda'
+import { path, pathOr, set, view, pipe } from 'ramda'
 import { assertContract } from "../../contracts/src"
 import { isTraceDefSpecs } from "./contracts"
 
