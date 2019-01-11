@@ -1,80 +1,30 @@
-import * as Rx from 'rx'
 import { filterNull } from "../../utils/src"
 import { DOM_SINK } from "@rxcc/utils"
 import { makeDOMDriver } from "cycle-snabbdom"
 import { run } from "@cycle/core"
 import defaultModules from "cycle-snabbdom/lib/modules"
 import { documentDriver } from "../../drivers/src/documentDriver"
-import {App} from './app'
-import { READY } from "../../tracing/src"
+import { App } from './app'
+import postRobot from "post-robot"
+import { makePostRobotEmitterDriver, makePostRobotListenerDriver } from "../../drivers/src/crossDomainDriver"
+import { CONTROL_CHANNEL, DATA_CHANNEL } from "./properties"
 
-const maxWindowLoadWaitingTime = 5000;
+const parentWindow = window.parent;
 
 const postWindowLoad = new Promise((resolve, reject) => {
-  // Set a timer in case the window never loads or does not load fast enough
-  const timerId  = setTimeout(reject, maxWindowLoadWaitingTime);
-
-  window.onload = function() {
+  window.onload = function () {
     // Notifying parent window that iframe is ready to receive messages
     // NOTE : we don't put an origin for this initial message - could be some security risks - use only in DEV!
-    window.parent.postMessage({type: READY}, '*');
-
-    // Setup an event listener that calls receiveMessage() when the window
-    // receives a new MessageEvent.
-    window.addEventListener('message', function receiveMessage(event) {
-      mainWindow = event.source;
-      mainWindowOrigin = event.origin;
-
-      // Emit the message on the observer side of the subject so it can be read on the observable side
-      const msgs = JSON.parse(event.data);
-      console.warn('event data', msgs);
-      msgs.forEach(msg => observable.onNext(msg))
-    });
-
-    clearTimeout(timerId);
+    // parentWindow.postMessage({type: READY}, '*');
     resolve();
-  }
+    }
 });
 
-// Main window handles
-let mainWindow;
-let mainWindowOrigin;
-// Create observable for the application to receive messages from main window
-const observable = new Rx.Subject();
-// Create observable to receive messages from main window
-const observer = Rx.Observer.create(
-  function next(x) {
-    // CONTRACT : our iframe MUST NOT send messages to the main window before the main window had sent one message.
-    if (!mainWindow) {
-      throw `devtool > crossWindowMessaging$ > postMessage > observer > origin window is not defined! This can happen if the iframe window sends a message before any messages from the origin window has been received. The iframe window CANNOT initiate the bidirectional communication!`
-    }
+// TODO :dont forget messages  arrive in teh shape of string i.e. JSON-unparsed
 
-    mainWindow.postMessage(x, mainWindowOrigin);
-  },
-  function error(err) {
-    // NOTE : an error here would come from the `crossWindowMessaging$` sink, we log the error but do not throw
-    console.error('devtool > crossWindowMessaging$ > postMessage > observer > Error: ', err);
-  },
-  function completed() {
-    console.info('devtool > crossWindowMessaging$ > postMessage > observer > Completed');
-  }
-);
-
-const windowMessagingSubject = Rx.Subject.create(observer, observable)
-
-function makeWindowMessagingDriver(windowMessagingSubject) {
-  return function windowMessagingDriver(sink$) {
-    // Observer side of the subject will receive messages from the iframe to send to the main window
-    sink$.subscribe(windowMessagingSubject.asObserver());
-
-    // Observable side of the subject receives messages from the main window, and is passed to `sources`
-    return windowMessagingSubject.asObservable()
-  }
-}
-
-function makeGraphRenderDriver(maybePassAgraphSelector){
+function makeGraphRenderDriver(maybePassAgraphSelector) {
   return function (sink$) {
-    sink$.subscribe(({context, command, params}) => {
+    sink$.subscribe(({ context, command, params }) => {
       // TODO : code to run the graph library with the data. params has the data, command is render, context is ?
       // context : graph selector (will render an array of graphs in fact)
       // command : 'render'
@@ -87,9 +37,10 @@ function makeGraphRenderDriver(maybePassAgraphSelector){
 postWindowLoad.then(() => {
   const { sources, sinks } = run(App, {
     [DOM_SINK]: filterNull(makeDOMDriver('#devtool_app', { transposition: false, defaultModules })),
-    renderGraph : makeGraphRenderDriver(),
+    renderGraph: makeGraphRenderDriver(),
     document: documentDriver,
-    crossWindowMessaging$ : makeWindowMessagingDriver(windowMessagingSubject)
+    crossWindowReceiver$: makePostRobotListenerDriver(postRobot, DATA_CHANNEL, parentWindow, undefined),
+    crossWindowEmitter$: makePostRobotEmitterDriver(postRobot, CONTROL_CHANNEL, parentWindow, undefined)
   });
 
 // Webpack specific code
@@ -106,19 +57,27 @@ postWindowLoad.then(() => {
     console.error(`devtool > error while loading window or running devtool!`, err);
   });
 
+/** ADR :
+ * I decided using the `post-robot` library to manage the trace cross-domain component
+ * PROS:
+ * - automatically manages ACK messages, and error messages (timer expiration)
+ * - possibility to use function from the parent side in the cross-domain component, including closures
+ * - easy to communicate between main window and cross-domain component via props
+ * - `zoid` library built on top of it adds nice extra features for components
+ * CONS:
+ * - The cross-border component must be already attached to a selector in the main page, while I want to trace an
+ * app just with a higher function, which means adding the selector only in case of trace
+ * - function executed in the main window requires two exchanges of messages every time, and that is asynchronous.
+ * That means overhead impacting performance
+ * - about 40 K gzipped.
+ * - well, it might have bugs, maybe the documentation is not so good, etc. (it is paypal though so could be ok, but
+ * still)
+ * Summary :
+ * - we'll go with it, in spite of the cons mainly because we need the ability to execute cross-domain functions with
+ * closures (to configure devtool at main parent's site)
+ */
 
 /**
- * msg => graph_msg | runtime_msg
- * state machine?
- * graph_msg 0
- * graph_msg 0.0
- * graph_msg 0.1...
- * Rules :
- * - When a graph_msg [path] comes that invalidates all the tree below (i.e. delete it)
- * - When a graph_msg [path] comes, add it to the tree structure
- *
- *
- *
  * Description of UI
  * - structure[]
  *   - every value is an array of graph_msg
@@ -157,14 +116,4 @@ postWindowLoad.then(() => {
  *     - source -> sink : sink colour coded
  *     - sink -> sink : same color code
  *
- * - state
- *   - primary selected log msg
- *   - secondary selected log msg
- *   - log msgs
- *
- * - initial state
- *   - selected runtime_ms id = 1 (the first message)
- *     - but be careful that that message might not have arrived
- *   - log msgs (can be initialized with a bunch of logs)
- *   - no secondary selection
  */

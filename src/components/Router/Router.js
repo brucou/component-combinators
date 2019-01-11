@@ -10,6 +10,7 @@ import { routeMatcher } from "../../vendor/routematcher"
 import Rx from "rx"
 import { ROUTE_CONFIG, ROUTE_PARAMS } from "./properties"
 import { combinatorNameInSettings, reconstructComponentTree } from "../../../tracing/src/helpers"
+import { ROUTING_COMBINATOR } from "../properties"
 
 const $ = Rx.Observable
 
@@ -283,7 +284,7 @@ export function OnRoute(routeSettings, componentTree) {
   // check that components is an array
   assertContract(hasAtLeastOneChildComponent, [componentTree], `Router : router combinator must at least have one child component to route to!`);
 
-  return m(RouterSpec, set(combinatorNameInSettings, 'OnRoute', routeSettings), componentTree)
+  return m(RouterSpec, set(combinatorNameInSettings, ROUTING_COMBINATOR, routeSettings), componentTree)
 }
 
 // NOTE ADR: 'routeSource' and not 'from' to avoid telescoping with other combinators which use

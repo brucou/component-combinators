@@ -13,6 +13,7 @@ import {
 } from "../../../utils/src"
 import { mergeChildrenIntoParentDOM } from "../m"
 import { div } from "cycle-snabbdom"
+import { LISTOF_COMBINATOR } from "../properties"
 
 const $ = Rx.Observable;
 
@@ -122,7 +123,7 @@ export function ListOf(listOfSettings, childrenComponents) {
   // NOTE : Do check it at that level and not with checkPreConditions
   assertContract(isListOfSettings, [listOfSettings], `ListOf : ListOf combinator must have 'list' and 'as' property which are strings!`);
 
-  return m(listOfSpec, set(combinatorNameInSettings, 'ListOf', listOfSettings), childrenComponents)
+  return m(listOfSpec, set(combinatorNameInSettings, LISTOF_COMBINATOR, listOfSettings), childrenComponents)
 }
 
 // NOTE ADR: it is better to have only one child component. If several, we have to allow

@@ -14,6 +14,7 @@ import { SWITCH_SOURCE } from "./properties"
 import { div } from "cycle-snabbdom"
 import { combinatorNameInSettings, reconstructComponentTree } from "../../../tracing/src/helpers"
 import { mergeChildrenIntoParentDOM } from "../m"
+import { CASE_COMBINATOR, SWITCH_COMBINATOR } from "../properties"
 
 const $ = Rx.Observable;
 const mapIndexed = addIndex(map)
@@ -337,9 +338,9 @@ export function Switch(switchSettings, componentTree) {
     _switchSettings = assoc('on', SWITCH_SOURCE, switchSettings);
   }
 
-  return m(_SwitchSpec, set(combinatorNameInSettings, 'Switch', _switchSettings), componentTree)
+  return m(_SwitchSpec, set(combinatorNameInSettings, SWITCH_COMBINATOR, _switchSettings), componentTree)
 }
 
 export function Case(CaseSettings, componentTree) {
-  return m(CaseSpec, set(combinatorNameInSettings, 'Case', CaseSettings), componentTree)
+  return m(CaseSpec, set(combinatorNameInSettings, CASE_COMBINATOR, CaseSettings), componentTree)
 }

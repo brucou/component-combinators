@@ -1,6 +1,24 @@
 export const DEVTOOL_STATE_CHANNEL = 'devtool_state';
 export const SELECTED_STATE_CHANNEL = 'deevtool_selected_state';
 export const SEP = '.';
+export const COMBINATOR_SECTION_SELECTOR = '.combinator';
+
+export const CONTROL_CHANNEL = 'control';
+export const DATA_CHANNEL = 'data';
+
+// cf. https://www.w3schools.com/charsets/ref_utf_arrows.asp
+export const UPWARDS_DOUBLE_ARROW = "\u21D1";
+export const DOWNWARDS_DOUBLE_ARROW = "\u21D3";
+const EMITTED_MESSAGE_NEXT_SELECTOR = '.next-notification';
+const EMITTED_MESSAGE_ERROR_SELECTOR = '.error-notification';
+const EMITTED_MESSAGE_COMPLETED_SELECTOR = '.completed-notification';
+export const EMITTED_MESSAGE_TYPE_SELECTOR = {
+  N: EMITTED_MESSAGE_NEXT_SELECTOR,
+  E: EMITTED_MESSAGE_ERROR_SELECTOR,
+  C: EMITTED_MESSAGE_COMPLETED_SELECTOR
+};
+export const EMITTED_MESSAGE_SECTION_SELECTOR = '.trace';
+
 
 /**
  * @typedef {Object} TreeStructureMsg
@@ -65,5 +83,22 @@ export const SEP = '.';
  * @property {Object.<Number, Array<Number>>} emissionTraces Maps `EmissionMsg` ids (value in the dictionnary)
  * to the rush in which they occurred (key in the dictionnary)
  * @property {*} componentTrees xxx
+ * @property {DisplayTraceTreeSpecs} renderSpecs specs, i.e. functions which specify how specific parts of the UI should
+ * be represented
  * // TODO : finish
+ */
+/**
+ * @typedef {{combinators : CombinatorMap, channels : ChannelMap}} DisplayTraceTreeSpecs Specifications for
+ * the visual appearance of combinators, and sources/sinks a.k.a channels
+*/
+/**
+ * @typedef {Object.<String, function (strPath:string, treeStructureTraceMsg:TreeStructureMsg, selectedTraceMsg:EmissionMsg)>} CombinatorMap
+ * Specifications for the visual appearance of combinators, and sources/sinks a.k.a channels
+ * - `strPath` is the path at which the component node to display is in the component tree
+ * - `treeStructureTraceMsg` is the parameters of the component node being displayed in the component tree
+ * - `selectedTraceMsg` is the emitted message corresponding to the selection made by the user in the UI
+ */
+/**
+ * @typedef {Object.<String, Function>} ChannelMap Specifications for
+ * the visual appearance of combinators, and sources/sinks a.k.a channels // TODO : finish
  */

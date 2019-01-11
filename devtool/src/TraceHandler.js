@@ -46,3 +46,5 @@ export const TraceHandler = function TraceHandler(sources, settings) {
     [DEVTOOL_STATE_CHANNEL]: devtoolStateUpdate$
   }
 };
+
+// TODO : will have to change as crossWindowMessaging$ no longer exists

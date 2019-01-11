@@ -13,7 +13,10 @@ Combine (object) or InjectSettings(function, use to adapt settings). Worse case,
 
 # blog
 - use css from there, very nice fonts : https://elbywan.github.io/bosket/
-
+- use jquery sausage fir contextual navigation
+- cf. really good http://berb.github.io/diploma-thesis/original/054_actors.html#scala
+  - scripts in script.js, look at tOC generation!
+  
 # Error handling
 Have a supervisor component which restars a branch of the tree in case of error
 - restart with what parameters???
@@ -200,6 +203,7 @@ Well, testing is complicated by having impure functions, so not sure what to do 
 have nice tracing/debugging, and then test with instrumenting the gui (a la flaky selenium).
 
 # TODO TODO
+- !!! check if WeakMap can be used! Avoid memory leaks!!!
 - ROLL UP AND RELEASE
 - start working on logging and visualization -> architecture note
 - start working on the new cycle event/state handling-> architecture draft article to write
@@ -209,3 +213,96 @@ have nice tracing/debugging, and then test with instrumenting the gui (a la flak
 > We are no longer building programs—end-to-end logic to calculate something for a single operator—as much as we are building systems.
 > In order to deliver systems that users—and businesses—can depend on, they have to be responsive, for it does not matter if something provides the correct response if the response is not available when it is needed. In order to achieve this, we need to make sure that responsiveness can be maintained under failure (resilience) and under load (elasticity). To make that happen, we make these systems message-driven, and we call them reactive systems.
 
+# TEMP TODO
+- post-robot use
+Parent
+  - wait for iframe READY event to get the window of the iframe (cannot send message to it 
+  otherwise) - as now, same
+  - when that arrives, send messages as usual, but not sure if bulk sending or one-by-one sending
+  ...
+  - in any case the sending is with post-robot.send('TRACE', ...) 
+IFRAME
+  - adjust the subjects! 
+  - send ready message to parent - post-robot.send(...) -> .then(get display settings)
+  - make a driver for a display source
+    - that display source will get the display settings in closure
+  - ONLY THEN run the cycle trace app!!
+    - I can give access to the settings thourhg the driver
+  - make post-robot driver to receive messages - no return to sender
+    - post-robot.on('TRACE') to receive from parent. 
+    - life as usual
+
+IFRAME
+THEN have a state machine
+States : NOTIFY_READY/RECEIVE_TRACES/ERROR
+Events : pr-send/READY ACK / Incoming Trace
+  - initial state : NOTIFY_READY
+  - auto event in NOTIFY_READY -> action = pr-send/READY, transition to 
+  AWAIT_DISPLAY_SETTINGS
+  - pr-send/READY answer event -> OK -> transition to RECEIVE_TRACES, output = display settings
+                                             NOK-> transition to ERROR
+  - pr-on receive event in RECEIVE_TRACES -> necessarily OK -> stay in RECEIVE_TRACES, output = 
+  event received i.e. trace message
+  - pr-on receive event not in RECEIVE_TRACES -> ERROR - cannot receive events before sending READY
+  - any event in ERROR : log warning
+
+MAIN
+DO TWO drivers : CANNOT there is no driver here, so standard subject and proxies!!
+
+THEN have a state machine
+Subjects: need one subject to pass traceMsg (from sendMessage function)
+States : IFRAME_NOT_READY/READY_TO_SEND/SENDING/ERROR
+Events : TRACE_MSG / IFRAME_READY / SEND_ACK
+  - initial state : IFRAME_NOT_READY
+  - TRACE_MSG event && IFRAME_NOT_READY -> buffer message, no output
+  - TRACE_MSG event &&  READY_TO_SEND -> action = pr/send, output irrelevant, transition to SENDING
+    - stat updat : take from buffer if any and decrease buffer
+    - NOOOOO if buffer then stay in READY TO SEND, else go to SENDING 
+  - TRACE_MSG event &&  SENDING -> buffer
+  - TRACE_MSG event &&  ERROR -> warning
+  - IFRAME_READY (pr-on/READY source) && IFRAME_NOT_READY -> action = return display settings 
+  (must be config of driver somehow HOW : put the function it on the sink prior)
+    - transition to READY_TO_SEND
+  - IFRAME_READY (pr-on/READY source) && READY_TO_SEND/SENDING/ERROR -> ERROR
+  - SEND_ACK (pr-send asnwer event) && IFRAME_NOT_READY -> ERROR
+  - SEND_ACK (pr-send asnwer event) && READY_TO_SEND -> ERROR
+  - SEND_ACK (pr-send asnwer event) && SENDING -> OK -> transition to READY_TO_SEND
+                         ERROR -> console.warn and life as usual
+  - SEND_ACK (pr-send asnwer event) && ERROR -> stay in error, log warning
+
+find a way to compaginate this with cycle somehow!!!
+
+
+----- two post-robot drivers for both directions
+// One-way driver, sink : the function to execute in response to input on channel
+// source : response, which is a function to cancel the function
+// listen on channel, execute a function on each received message
+makePostRobotListenerDriver(postRobot, channel, window, domain){
+  // One-way driver, receives messages from the iframe
+  NOT GOOD : pass listener fn, but keep disposable to remove listener before putting another one
+  
+  let cancelFn = null;
+  return function(sink$){
+    return sink$
+      .map(fn => 
+        postRobot.on(channel, { window, domain }, fn);
+        cancelFn ? cancelFn() : cancelFn = fn;
+      ); // fn :: event -> *, returned value
+  }
+}
+
+// Two-way driver, sink : the data to send
+// source : returned/error value from the receiver
+// If error from the promise flatMap should produce an error right??? should
+// postRobot, channel, window, domain : actually domain is option object
+makePostRobotEmitterDriver(postRobot, channel, window, domain){
+  return function (sink$){
+    return sink$
+      .flatMap(data => postRobot.send(window, channel, data, { domain }))
+  }
+}
+
+# codesandbox!!
+- modify this config : https://codesandbox.io/s/mzwl9202q9
+  - I should be able to run my combinators there
+  - and the state machine example as well

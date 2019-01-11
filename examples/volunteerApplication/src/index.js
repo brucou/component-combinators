@@ -57,6 +57,7 @@ Promise.resolve()
       return localForage.getItem(key).then(value => ({ [key]: value }))
     }
   )))
+  // TODO : dose not return a promise??
   .then(console.log.bind(console, `database content before`))
   .then(() => loadTestData(localForage))
   .then(() => {

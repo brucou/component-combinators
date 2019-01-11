@@ -1,17 +1,17 @@
 import {
   combinatorNameInSettings, componentNameInSettings, containerFlagInSettings, deconstructTraceFromSettings,
-  defaultTraceSinkFn, defaultTraceSourceFn, getId, getIsTraceEnabled, getLeafComponentName, getPathForNthChild,
-  iframeIdInTraceDef, iframeSourceInTraceDef, isLeafComponent, leafFlagInSettings, mapOverComponentTree, pathInSettings,
-  traceSinks, traceSources
+  defaultDisplaySettings, defaultTraceSinkFn, defaultTraceSourceFn, displaySettingsInTraceDef, getId, getIsTraceEnabled,
+  getLeafComponentName, getPathForNthChild, iframeIdInTraceDef, iframeSourceInTraceDef, isLeafComponent,
+  leafFlagInSettings, mapOverComponentTree, pathInSettings, traceSinks, traceSources
 } from './helpers'
 import {
-  defaultIFrameId, defaultIFrameSource, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, READY,
+  defaultIFrameId, defaultIFrameSource, DISPLAY_SETTINGS, GRAPH_STRUCTURE, IS_TRACE_ENABLED_DEFAULT, PATH_ROOT, READY,
   TRACE_BOOTSTRAP_NAME
 } from './properties'
 import { Combine } from "../../src/components/Combine"
 import { decorateWithAdvice, getFunctionName, isAdvised, vLift } from "../../utils/src"
 import { iframe } from "cycle-snabbdom"
-import { path, pathOr, set, view, pipe } from 'ramda'
+import { assocPath, merge, path, pathOr, set, view } from 'ramda'
 import { assertContract } from "../../contracts/src"
 import { isTraceDefSpecs } from "./contracts"
 
@@ -24,6 +24,7 @@ const WAIT_FOR_READY = 'WAIT_FOR_READY';
 const EMIT_NOW = 'EMIT_NOW';
 const IFRAME_MSG = 'iframeMsg';
 const EMIT_ME_MSG = 'emitMeMsg';
+const DISPLAY_SETTINGS_MSG = 'displayMsg';
 
 let graphCounter = 0;
 
@@ -60,9 +61,11 @@ function passToBufferStateMachine(acc, iframeReadyOrMsgToEmit) {
           // Keeping track of the iframe origin to avoid security pitfall with iframe communication
           acc.origin = iframeReadyOrMsgToEmit[IFRAME_MSG];
           break;
+        // collapsing both cases : same action i.e. buffer incoming message
         case EMIT_ME_MSG :
+        case DISPLAY_SETTINGS_MSG :
           if (acc.buffer.length > maxBufferSize) throw `makeIFrameMessenger : buffer overflow!!`
-          acc.buffer.push(iframeReadyOrMsgToEmit[EMIT_ME_MSG]);
+          acc.buffer.push(iframeReadyOrMsgToEmit[EMIT_ME_MSG] || iframeReadyOrMsgToEmit[DISPLAY_SETTINGS_MSG]);
           acc.shouldEmit = false;
           acc.controlState = WAIT_FOR_READY;
           break;
@@ -76,8 +79,10 @@ function passToBufferStateMachine(acc, iframeReadyOrMsgToEmit) {
           // Should not happen : only one READY message expected from iframe
           throw `received iframe msg while awaiting only for trace messages to emit to iframe!`
           break;
+        // collapsing both cases : same action i.e. emit
         case EMIT_ME_MSG :
-          acc.buffer = [iframeReadyOrMsgToEmit[EMIT_ME_MSG]];
+        case DISPLAY_SETTINGS_MSG:
+          acc.buffer = [iframeReadyOrMsgToEmit[EMIT_ME_MSG] || iframeReadyOrMsgToEmit[DISPLAY_SETTINGS_MSG]];
           acc.shouldEmit = true;
           acc.controlState = EMIT_NOW;
           break;
@@ -92,7 +97,13 @@ function passToBufferStateMachine(acc, iframeReadyOrMsgToEmit) {
   return acc
 }
 
-export function makeIFrameMessenger(iframeId) {
+/**
+ *
+ * @param {String} iframeId
+ * @param {TraceDef} traceDef
+ * @returns {function sendMessage}
+ */
+export function makeIFrameMessenger(iframeId, traceDef) {
   /**
    * Sends a message to the devtool iframe
    * @param {*} msg Anything which can be JSON.stringified
@@ -107,7 +118,15 @@ export function makeIFrameMessenger(iframeId) {
   // In any case, that function will only be executed at most once per `run` execution, so we are good anyways
   window.addEventListener("message", receiveMessageFromIFrame(iframeReceivingEnd), false);
 
+  const displaySettingMsg = {
+    [DISPLAY_SETTINGS]: merge(
+      view(displaySettingsInTraceDef, traceDef),
+      { logType: DISPLAY_SETTINGS }
+    )
+  };
+
   iframeReceivingEnd.map(x => ({ [IFRAME_MSG]: x }))
+    .merge($.of(displaySettingMsg))
     .merge(parentWindowEmittingEnd.map(x => ({ [EMIT_ME_MSG]: x })))
     .scan(passToBufferStateMachine, { buffer: [], shouldEmit: false, origin: '*', controlState: WAIT_FOR_READY })
     .filter(x => x.shouldEmit)
@@ -116,7 +135,7 @@ export function makeIFrameMessenger(iframeId) {
         const iframeEl = document.querySelector(iFrameId);
         postMessages(iframeEl.contentWindow, x.origin, x.buffer)
       },
-      err => {throw `makeIFrameMessenger > Encountered err while processing iframe and parent messaging !?`},
+      err => {throw `makeIFrameMessenger > Encountered err while processing iframe and parent messaging !? ${err}`},
       () => {}
     );
 
@@ -126,7 +145,7 @@ export function makeIFrameMessenger(iframeId) {
 }
 
 function postMessages(window, origin, msgs) {
-    window.postMessage(JSON.stringify(msgs), origin)
+  window.postMessage(JSON.stringify(msgs), origin)
 }
 
 // onMessage
@@ -295,7 +314,7 @@ function adviseApp(traceDef, App) {
 export function traceApp(traceDefSpecs, App) {
   assertContract(isTraceDefSpecs, [traceDefSpecs], `traceApp : Fails contract isTraceDefSpecs!`);
 
-  const traceDef = {
+  let traceDef = {
     _hooks: pathOr({ preprocessInput, postprocessOutput }, ['_hooks'], traceDefSpecs),
     _helpers: pathOr({ getId }, ['_helpers'], traceDefSpecs),
     _trace: {
@@ -306,15 +325,20 @@ export function traceApp(traceDefSpecs, App) {
       path: pathOr([0], ['_trace', 'path'], traceDefSpecs),
       iframeSource: pathOr(defaultIFrameSource, ['_trace', 'iframeSource'], traceDefSpecs),
       iframeId: pathOr(defaultIFrameId, ['_trace', 'iframeId'], traceDefSpecs),
-      sendMessage: pathOr(
-        makeIFrameMessenger(path(['_trace', 'iframeId'], traceDefSpecs)),
-        ['_trace', 'sendMessage'], traceDefSpecs
-      ),
       onMessage: null, // not used for now
+      display: merge(defaultDisplaySettings, view(displaySettingsInTraceDef, traceDefSpecs)),
       traceSpecs: traceDefSpecs._trace.traceSpecs,
       defaultTraceSpecs: pathOr([defaultTraceSourceFn, defaultTraceSinkFn], ['_trace', 'defaultTraceSpecs'], traceDefSpecs),
     }
   };
+  traceDef = assocPath(['_trace', 'sendMessage'],
+    pathOr(
+      makeIFrameMessenger(path(['_trace', 'iframeId'], traceDefSpecs), traceDef),
+      ['_trace', 'sendMessage'],
+      traceDefSpecs
+    ),
+    traceDef
+  );
 
   return adviseApp(traceDef, App)
 }

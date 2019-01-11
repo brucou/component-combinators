@@ -1,11 +1,11 @@
 import { SEP } from "./properties"
-import { SINK_EMISSION, SOURCE_EMISSION } from "../../tracing/src"
+import { DISPLAY_SETTINGS, GRAPH_STRUCTURE, RUNTIME, SINK_EMISSION, SOURCE_EMISSION } from "../../tracing/src"
 import { flatten, merge, range } from 'ramda';
 
 export const PROCESS_TREE_STRUCTURE_MSG = 'PROCESS_TREE_STRUCTURE_MSG';
 export const PROCESS_DATA_EMISSION_MSG = 'PROCESS_DATA_EMISSION_MSG';
-export const TREE_STRUCTURE_MSG = 'graph_structure';
-export const DATA_EMISSION_MSG = 'runtime';
+export const TREE_STRUCTURE_MSG = GRAPH_STRUCTURE;
+export const DATA_EMISSION_MSG = RUNTIME;
 
 const EMPTY_TREE = { cursor: "0", hash: {} };
 
@@ -13,8 +13,7 @@ function getTraceMsgLogType(msg) {
   return msg.logType
 }
 
-// TODO : !! edge case with path repeating itself to analyze what to do... nothing for now
-// TODO : refactor so to use push possibility of json patch
+// TODO : refactor so to use array.push possibility of json patch
 
 /**
  * Inlined state machine with two states and four transitions, which computes the state for the devtool, destined to
@@ -30,6 +29,17 @@ export function processTraceStateMachine(controlState, traceMsg) {
   const incomingEvent = getTraceMsgLogType(traceMsg);
 
   switch (incomingEvent) {
+    case DISPLAY_SETTINGS :
+      switch (controlState) {
+        case PROCESS_TREE_STRUCTURE_MSG :
+        case PROCESS_DATA_EMISSION_MSG :
+          action = processDisplaySettingsMsg;
+          newControlState = controlState;
+          break;
+        default :
+          throw `TraceHandler > devtoolStateUpdate$ : internal state machine in unexpected state! ${controlState}`
+      }
+      break;
     case TREE_STRUCTURE_MSG :
       switch (controlState) {
         case PROCESS_TREE_STRUCTURE_MSG :
@@ -430,4 +440,21 @@ function processEmissionMsgWhileInEmissionState(traceMsg, devtoolState) {
     updateEmissionTraces,
     updateTreeStructureTraces,
   ])
+}
+
+function processDisplaySettingsMsg(traceMsg, devtoolState) {
+  // TODO : complete what to do when receiving DISPLAY_SETTINGS : jus put i in teh state!
+  /** @type DisplayTraceTreeSpecs*/
+  const msg = traceMsg[DISPLAY_SETTINGS];
+  // TODO : now I have to see how to have a nice JSON.stringify to store it, read it... and recompose it
+  // TODO : mmm might have to put it somewhere else from devtoolstate
+  // !! the json parse is here : const msgs = JSON.parse(event.data); in devtool index so good
+  // now the issue is to json patch it, does it let function go??
+  // If not possible to pass function with json patch, then pass a string here, and somewhere else
+  // add another source devtoolState which stringifies it. Maybe the best is to ahve a separate source!!
+  // TODO : then write the render missing, and test
+
+  return [
+
+  ]
 }

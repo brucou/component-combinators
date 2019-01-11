@@ -30,7 +30,7 @@ export function aboutContinueEventFactory(sources, settings) {
 
   return sources.DOM.select(USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR).events('click')
     .tap(preventDefault)
-    .map((x) => {
+    .map((x) => {``
       void x;
       const formData = getAboutFormData(sources.document);
 

@@ -1,15 +1,12 @@
 import { DOM_SINK, vLift } from "../../utils/src"
 import { DEVTOOL_STATE_CHANNEL, SELECTED_STATE_CHANNEL, SEP } from "./properties"
-import { componentNameInSettings, SOURCE_EMISSION } from "../../tracing/src"
+import { componentNameInSettings, defaultDisplayCombinatorName, SOURCE_EMISSION } from "../../tracing/src"
 import { set } from 'ramda'
 import { Tree } from "../../src/components/UI"
 import { getHashedTreeLenses } from 'fp-rosetree';
 import { div, li, span, ul } from "cycle-snabbdom"
 import { InjectSources } from "../../src"
 import * as Rx from "rx";
-import { AspirationalPageHeader } from "../../examples/TracedForEachListDemo/src/AspirationalPageHeader"
-import { Card } from "../../examples/TracedForEachListDemo/src/Card"
-import { Pagination } from "../../examples/TracedForEachListDemo/src/Pagination"
 
 const $ = Rx.Observable;
 
@@ -19,9 +16,7 @@ const componentTreeLenses = getHashedTreeLenses('.');
 
 const COMPONENT_TREE_PANEL_ROOT_WRAPPER_SELECTOR = ".depth-0";
 const COMPONENT_TREE_PANEL_CONTAINER_SELECTOR = ".component-tree-view";
-const COMBINATOR_SECTION_SELECTOR = '.combinator';
 const COMPONENT_NAME_SECTION_SELECTOR = '.info';
-const EMITTED_MESSAGE_SECTION_SELECTOR = '.trace';
 const CONTAINER_COMPONENT_SELECTOR = '.is-container-component';
 const NOT_CONTAINER_COMPONENT_SELECTOR = '';
 const FOLDED_SELECTOR = ".folded";
@@ -30,18 +25,6 @@ const NOT_SELECTED_SELECTOR = '';
 const NOT_FOLDED_SELECTOR = "";
 const EXPAND_SELECTOR = ".toggle";
 const FLEX_CONTAINER_SELECTOR = '.component-tree__container';
-const EMITTED_MESSAGE_NEXT_SELECTOR = '.next-notification';
-const EMITTED_MESSAGE_ERROR_SELECTOR = '.error-notification';
-const EMITTED_MESSAGE_COMPLETED_SELECTOR = '.completed-notification';
-const EMITTED_MESSAGE_TYPE_SELECTOR = {
-  N: EMITTED_MESSAGE_NEXT_SELECTOR,
-  E: EMITTED_MESSAGE_ERROR_SELECTOR,
-  C: EMITTED_MESSAGE_COMPLETED_SELECTOR
-};
-
-// cf. https://www.w3schools.com/charsets/ref_utf_arrows.asp
-const UPWARDS_DOUBLE_ARROW = "\u21D1";
-const DOWNWARDS_DOUBLE_ARROW = "\u21D3";
 
 const COMPONENT_TREE_NODE_SLOT = "component_tree_node_slot";
 const PATH_ATTRIBUTE = 'path';
@@ -113,27 +96,42 @@ function renderEmittedMessageSummary(settings, userSelection, devtoolState, uiSt
     : span(EMITTED_MESSAGE_SECTION_SELECTOR, [])
 }
 
+// TODO
+
+/**
+ * render a VTree encoding the visual representation of the section dedicated to the combinator name display
+ * @param settings
+ * @param userSelection
+ * @param {DevtoolState} devtoolState
+ * @param uiState
+ * @returns {*}
+ */
 function renderCombinatorName(settings, userSelection, devtoolState, uiState) {
   const { path, label } = settings;
   const treeStructureTraceMsg = label.label;
   const { combinatorName, componentName } = treeStructureTraceMsg;
 
   const { primarySelection } = userSelection;
-  const { emissionTracesById, } = devtoolState;
+  const { emissionTracesById, renderSpecs } = devtoolState;
+  const { channels, combinators } = renderSpecs;
   const strPath = path.join(SEP);
   /** @type EmissionMsg*/
   const selectedTraceMsg = emissionTracesById[primarySelection];
   const { path: selectedTraceMsgPath, combinatorName: realCombinatorName } = selectedTraceMsg;
 
   const isSelected = strPath === selectedTraceMsgPath.join(SEP);
-  const displayedCombinatorName = realCombinatorName || combinatorName;
+  const displayedCombinatorNameIfSelected = realCombinatorName || combinatorName;
+  // In the normal case if no combinators, we render the component name as if it were a combinator...
+  const displayedCombinatorNameIfNotSelected = combinatorName || componentName;
+  // Basically all combinators have/should have a render function specified.
+  // That would ensure that the default render function is used iff we are on a leaf component, i.e.
+  // when there is no combinator name but there is a component name, which is the name of the function component
+  const renderFn = isSelected
+    ? combinators[displayedCombinatorNameIfSelected] || defaultDisplayCombinatorName(displayedCombinatorNameIfSelected)
+    : combinators[displayedCombinatorNameIfNotSelected] || defaultDisplayCombinatorName(displayedCombinatorNameIfNotSelected);
 
   // TODO : that is in fact confusing and due to same path on ForEach/Inner for instance... solution is to preprocess..
-  return span(COMBINATOR_SECTION_SELECTOR, [
-    isSelected
-      ? displayedCombinatorName || componentName
-      : combinatorName || componentName
-  ])
+  return renderFn(strPath, treeStructureTraceMsg, selectedTraceMsg)
 }
 
 function renderExpandButton(settings, userSelection, devtoolState, uiState) {
@@ -222,9 +220,7 @@ function TreeNode(sources, settings) {
       else {
         // NOTE : we put something random (`.li`) because snabddom overloading causes problem with empty strings as sel
         return li(`.node${selectedClass}${foldedClass}`, {
-          attrs: {
-            "path": path.join(SEP),
-          },
+          attrs: { "path": path.join(SEP), },
           slot: COMPONENT_TREE_NODE_SLOT
         }, [
           renderDisplayedLabel(settings, userSelection, devtoolState, uiState),
@@ -291,7 +287,8 @@ export const ComponentTreePanel = InjectSources({ [TREE_SOURCE_NAME]: componentT
   ])
 ]);
 
-// TODO : review all component combinators and pass their settings always in the same name Settings
+// TODO : I AM HERE : state machine to pass settigns to devtool and then use that to display comb/sour/sink better
+// 4. TODO : review all component combinators and pass their settings always in the same name Settings
 // Ex : ForEachSettings, ListOfSettings, InjectSourcesSettings
 // make sure those settings are all mandatory to avoid undesired inheritance bugs...
 // then pass those settings in the tracing, but filtered with just those (I have the combinatorName so should be easy)
@@ -303,13 +300,29 @@ export const ComponentTreePanel = InjectSources({ [TREE_SOURCE_NAME]: componentT
 //         Card
 //   ForEach : fetchedPageNumber$ => pageNumber                                        PaginateCards
 //     Pagination
-//
+// For InjectSources, do not pass the settings object, pass {Inject...Settings : [names of sources]}
+// To reflect also if `InjectSources` should have a {event, behaviour} separation (maybe)
 
-// TODO : also display more info with the source name. I sometimes should display the context if any
-// TODO : also change implementation of inject sources so it can be like other and I can use set(combponentname in
-// sttings...
-// TODO : change traceApp component name from ROOT to TRACER
-// TODO : also think about a way to trace also the DOM events...
-// TODO : do the preprocessign of trace messages to eliminate Indexed|Inner etc
-// TODO : bfore that, add the ForEach vs. Inner in separate paths (yeah, an insert API in the tree library would be
-// good)
+// 1. TODO : pass map {trace entity : display function}
+// - pass {combinatorName : (tree_structure_msg) => HTML} - can use the settings in the msg to display extra info
+// - pass {channel : runtime_msg => HTML} - discrimate there again source/sink in emits.type
+// - have a default value for these functions if not configured
+// - those {...} are passed as config on the iTraceDef object
+//   - display : {combinators: {...}, channels: {...}}
+// - there is a protocol of communication between parent and iframe
+//   - first iframe sends ready
+//   - then parent sends DISPLAY_SETTING_MSG or TRACE_MSGs
+//   - update the corresponding state machine
+// !! this does the trick for JSON function serialization https://gist.github.com/anvaka/3815296
+//    also even better
+// https://medium.com/@oprearocks/serializing-object-methods-using-es6-template-strings-and-eval-c77c894651f0 !! Note
+// that then I canno include closures, so not even constant... so add a param deps to display fn? or add it as part of
+// Function reviver? (cf. Function parameters, and add use strict?)
+// 2. TODO : also display more info with the source name. I sometimes should display the context if any
+// TODO : also change implementation of inject sources so it can be like other and I can use set(componentname in
+// settings...
+// 3. TODO : change traceApp component name from ROOT to TRACER TODO : also think about a way to trace also the DOM
+// events...
+// 5. TODO : do the preprocessing of trace messages to eliminate Indexed|Inner etc
+// 5. TODO : before that, add the ForEach vs. Inner in separate paths (yeah, an insert API in the tree
+// library would be good)

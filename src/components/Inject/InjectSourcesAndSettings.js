@@ -2,6 +2,7 @@ import { m } from "../m/m"
 import { assertContract, isFunction, isObject } from "../../../contracts/src/index"
 import {set} from 'ramda'
 import { combinatorNameInSettings } from "../../../tracing/src/helpers"
+import { INJECT_SOURCES_AND_SETTINGS_COMBINATOR } from "../properties"
 
 function isSourcesAndSettings(obj) {
   return Boolean(
@@ -24,7 +25,7 @@ export function InjectSourcesAndSettings({ sourceFactory: sourcesFactory, settin
       makeLocalSources: sourcesFactory,
       makeLocalSettings: settingsFn
     },
-    set(combinatorNameInSettings, 'InjectSourcesAndSettings', settingsObj),
+    set(combinatorNameInSettings, INJECT_SOURCES_AND_SETTINGS_COMBINATOR, settingsObj),
     componentTree
   )
 }

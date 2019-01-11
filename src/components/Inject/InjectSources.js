@@ -2,6 +2,7 @@ import { m } from "../m/m"
 import { mapObjIndexed } from 'ramda'
 import {set} from 'ramda'
 import { combinatorNameInSettings } from "../../../tracing/src"
+import { INJECT_SOURCES_COMBINATOR } from "../properties"
 
 export function InjectSources(sourcesHash, componentTree) {
   return m({
@@ -10,5 +11,5 @@ export function InjectSources(sourcesHash, componentTree) {
         return sourceFactory(sources, settings)
       }, sourcesHash)
     }
-  }, set(combinatorNameInSettings, `InjectSources`, {}), componentTree)
+  }, set(combinatorNameInSettings, INJECT_SOURCES_COMBINATOR, {}), componentTree)
 }

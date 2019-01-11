@@ -4,6 +4,7 @@ import {
 import { m } from '../m/m'
 import { intersection, keys, merge, set } from 'ramda'
 import { combinatorNameInSettings } from "../../../tracing/src/helpers"
+import { PIPE_COMBINATOR } from "../properties"
 
 function isPipeSettings(sources, settings) {
   if ('overwrite' in settings) {
@@ -52,5 +53,5 @@ export function Pipe(pipeSettings, componentArray) {
   assertContract(isPipeSettings, [null, pipeSettings], `Pipe : Pipe combinator may have 'overwrite' settings property. If that is the case, it must be a boolean!`);
   assertContract(isNonEmptyArrayComponent, [componentArray], `Pipe : Pipe combinator must be passed an array of components!`);
 
-  return m(pipeSpec, set(combinatorNameInSettings, 'Pipe', pipeSettings), componentArray)
+  return m(pipeSpec, set(combinatorNameInSettings, PIPE_COMBINATOR, pipeSettings), componentArray)
 }

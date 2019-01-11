@@ -66,6 +66,15 @@ const sinkNames = [DOM_SINK, 'domainAction$'];
 // display warning for the rest of the events. To suppress the warning, we decide to have
 // different selectors
 export const events = {
+  // NOTE : We used a trick here to have the fetch event automatically received by the state machine before any
+  // other event :
+  // - All event factories are executed when the state machine is started.
+  // - `fetchUserApplicationModelData` return an observable which when subscribed immediately emits a value,
+  // triggering the state machine transition - in fact emission is almost immediate as data is in local storage
+  // - other event factories activate listeners on user events which do not immediately fire as there is no
+  // immediatee user action
+  // - as a result, the fetch event is the first to fire and the data stored (in local storage here) is fetched
+  // - the fetch events fires as a consequence of subscription to the event source
   [FETCH_EV]: fetchUserApplicationModelData,
   [ABOUT_CONTINUE]: aboutContinueEventFactory,
   [QUESTION_CONTINUE]: questionContinueEventFactory,

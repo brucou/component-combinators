@@ -103,7 +103,7 @@
   },
   "dependencies": {
     "cycle-snabbdom": "^3.0.0",
-    "fast-json-patch": "^1.1.4",
+    "fast-json-patch": "^1.2.2",
     "fp-rosetree": "^0.2.3",
     "mermaid": "^6.0.0",
     "pretty-format": "^22.1.0",

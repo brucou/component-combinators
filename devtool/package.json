@@ -103,6 +103,7 @@
     "ramda": "^0.25.0",
     "rx": "^4.1.0",
     "snabbdom": "^0.5.0",
-    "snabbdom-to-html": "^3.1.1"
+    "snabbdom-to-html": "^3.1.1",
+    "post-robot": "^8.0.26"
   }
 }

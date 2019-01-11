@@ -4,6 +4,7 @@ import { assertContract, isOptional, isRecordE, isString } from "../../../contra
 import { combinatorNameInSettings } from "../../../tracing/src/helpers"
 import { computeInjectSpec } from "./InjectCircularSources"
 import * as jsonpatch from "fast-json-patch/src/json-patch-duplex"
+import { INJECT_LOCAL_STATE_COMBINATOR } from "../properties"
 
 const injectLocalStateError = `InjectLocalState : Invalid settings !`
 const isLocalStateSettings = isOptional(isRecordE({
@@ -35,5 +36,5 @@ export function InjectLocalState(injectLocalStateSettings, componentTree) {
   // Here we chose to not have the settings inherited down the component tree, as this information is of exclusive
   // usage at this level
   const cleanedSettings = omit(['behaviour', 'event'], injectLocalStateSettings);
-  return m(injectlocalStateSpec, set(combinatorNameInSettings, 'InjectLocalState', cleanedSettings), componentTree)
+  return m(injectlocalStateSpec, set(combinatorNameInSettings, INJECT_LOCAL_STATE_COMBINATOR, cleanedSettings), componentTree)
 }

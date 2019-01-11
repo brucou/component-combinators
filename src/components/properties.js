@@ -1,0 +1,12 @@
+export const LISTOF_COMBINATOR = 'ListOf';
+export const FOREACH_COMBINATOR = 'ForEach';
+export const SWITCH_COMBINATOR =  'Switch';
+export const CASE_COMBINATOR =  'Case';
+export const ROUTING_COMBINATOR = 'OnRoute';
+export const COMBINE_COMBINATOR = 'Combine';
+export const INJECT_SOURCES_COMBINATOR = `InjectSources`;
+export const INJECT_LOCAL_STATE_COMBINATOR = 'InjectLocalState';
+export const INJECT_CIRCULAR_SOURCES_COMBINATOR = 'InjectCircularSources';
+export const INJECT_SOURCES_AND_SETTINGS_COMBINATOR = 'InjectSourcesAndSettings';
+export const PIPE_COMBINATOR =  'Pipe';
+export const IN_SLOT_COMBINATOR = 'InSlot';

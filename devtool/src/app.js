@@ -5,11 +5,12 @@ import { SourcesPanel } from './SourcesPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { SinksPanel } from './SinksPanel'
 import { GraphPanel } from './GraphPanel'
-import { InjectSources, InSlot } from "../../src"
+import { InjectSources, InSlot, Pipe } from "../../src"
 import { div } from "cycle-snabbdom"
 import { InjectLocalState } from "../../src/components/Inject/InjectLocalState"
 import { DEVTOOL_STATE_CHANNEL, SELECTED_STATE_CHANNEL } from "./properties"
 import { TraceHandler } from "./TraceHandler"
+import { READY_TOKEN } from "../../tracing/src"
 
 const NavigationPanelSlot = 'NavigationSlot';
 const ComponentTreePanelSlot = 'ComponentTreePanelSlot';
@@ -66,7 +67,33 @@ function getSelectedChannelState(sources, settings) {
     .shareReplay(1)
 }
 
-export const App = InjectLocalState({
+function SetupCrossDomain(sources, settings){
+  const {crossWindowEmitter$, crossWindowReceiver$ } = sources;
+
+
+  const events = {
+    READY_ACK : crossWindowEmitter$.filter(x => !x.error), // NOTE : answer is display settings!!
+    READY_NOK : crossWindowEmitter$.filter(x => x.error),
+    TRACE_MSG : crossWindowReceiver$.map(event => JSON.parse(event.data))
+  };
+  const msgProcessingFSM = makeStreamingStateMachine(fsmDef,  settings );
+  // makeStreamingStateMachine :: uses :: create_state_machine(fsmDef,  settings );
+  // with let _value = automaton.start(); and automaton.yield to send a value
+  // Note that the automaton is synchronous and as such async has to be simluated as state
+  const fsmActions$ = msgProcessingFSM(events);
+  ......processedAction$  = action$.filter(Boolean).map(action => processAction)
+
+  const actions = {
+    emitReadyMsg : $.of(READY_TOKEN),
+    ...
+  };
+
+  return {
+    crossWindowEmitter$ : actions.emitReadyMsg
+  }
+}
+
+const Devtool = InjectLocalState({
     sourceName: DEVTOOL_STATE_CHANNEL,
     initialState: initialState,
   }, [
@@ -81,3 +108,16 @@ export const App = InjectLocalState({
     ]])
   ]
 );
+
+export const App = Pipe({ Pipe: { throwIfSinkSourceConflict: true } }, [
+  SetupCrossDomain,
+  Devtool
+])
+
+// TODO :
+// initialize ready message
+// set the state machine -> action$
+// from the action$, derive a traceMsg$ to be used in TraceHandler
+// App = Pipe (SetupCrossDomain, Devtool)
+// Devtool = InjectLocalState
+// SetupCrossDomain = function (so,se){}

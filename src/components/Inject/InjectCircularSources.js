@@ -5,6 +5,7 @@ import { EVENT_TYPE } from "../../../tracing/src/properties"
 import Rx from "rx"
 import { combinatorNameInSettings, reconstructComponentTree } from "../../../tracing/src/helpers"
 import { noop } from "../../../utils/src"
+import { INJECT_CIRCULAR_SOURCES_COMBINATOR } from "../properties"
 
 const $ = Rx.Observable
 const injectCircularSourcesError = `InjectCircularSources : Invalid settings !`
@@ -198,7 +199,7 @@ export function InjectCircularSources(injectCircularSourcesSettings, componentTr
   // Here we chose to not have the settings inherited down the component tree, as this information is of exclusive
   // usage at this level
   const cleanedSettings = omit(['behaviour', 'event'], injectCircularSourcesSettings);
-  return m(injectlocalStateSpec, set(combinatorNameInSettings, 'InjectCircularSources', cleanedSettings), componentTree)
+  return m(injectlocalStateSpec, set(combinatorNameInSettings, INJECT_CIRCULAR_SOURCES_COMBINATOR, cleanedSettings), componentTree)
 }
 
 /**

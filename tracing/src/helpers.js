@@ -3,8 +3,19 @@ import { RUNTIME, SINK_EMISSION, SOURCE_EMISSION } from './properties'
 import {
   CHILDREN_ONLY, componentTreePatternMatchingPredicates, CONTAINER_AND_CHILDREN, makePatternMatcher, ONE_COMPONENT_ONLY
 } from '../../utils/src/index'
-import { convertVNodesToHTML, isNextNotification } from "../../utils/src"
+import { convertVNodesToHTML, DOM_SINK, isNextNotification } from "../../utils/src"
 import { isBehaviourSink, isBehaviourSource, isEventSink, isEventSource, markAsBehavior, markAsEvent } from "../../src"
+import {
+  COMBINE_COMBINATOR,
+  FOREACH_COMBINATOR, IN_SLOT_COMBINATOR, INJECT_CIRCULAR_SOURCES_COMBINATOR, INJECT_LOCAL_STATE_COMBINATOR,
+  INJECT_SOURCES_AND_SETTINGS_COMBINATOR, INJECT_SOURCES_COMBINATOR,
+  LISTOF_COMBINATOR, PIPE_COMBINATOR, ROUTING_COMBINATOR,
+  SWITCH_COMBINATOR
+} from "../../src/components/properties"
+import {
+  COMBINATOR_SECTION_SELECTOR, DOWNWARDS_DOUBLE_ARROW, EMITTED_MESSAGE_SECTION_SELECTOR, EMITTED_MESSAGE_TYPE_SELECTOR,
+  SEP, UPWARDS_DOUBLE_ARROW
+} from "../../devtool/src/properties"
 
 let counter = 0;
 
@@ -97,6 +108,57 @@ export const combinatorNameInSettings = lensPath(['_trace', 'combinatorName']);
 export const iframeSourceInTraceDef = lensPath(['_trace', 'iframeSource']);
 
 export const iframeIdInTraceDef = lensPath(['_trace', 'iframeId']);
+
+export const displaySettingsInTraceDef = lensPath(['_trace', 'display']);
+
+// TODO : ok, actually change the function, I cannot have selectors COMBINATOR_SECTION_SELECTOR as there is no closure
+export function defaultDisplayCombinatorName(name){
+  return function defaultDisplayCombinatorName(){
+    return span(COMBINATOR_SECTION_SELECTOR, [name])
+  }
+}
+
+// TODO : ok, actually change the function, I cannot have selectors COMBINATOR_SECTION_SELECTOR as there is no closure
+// TODO : or have a complex env meachnism which is passed before the settings to teh iframe, and add env as param?
+export function defaultRenderChannelEmission(strPath, treeStructureTraceMsg, selectedTraceMsg){
+  const { emits, id: selectedTraceId, path: selectedTraceMsgPath, settings: traceMsgSettings } = selectedTraceMsg;
+  const { identifier, notification, type } = emits;
+  const { kind } = notification;
+  const iconEmissionDirection = type === SOURCE_EMISSION ? DOWNWARDS_DOUBLE_ARROW : UPWARDS_DOUBLE_ARROW;
+
+  const isSelected = strPath === selectedTraceMsgPath.join(SEP);
+
+  // If emitted trace message coincides with node path then display there which source/sink is related
+  return isSelected
+    ? span(`${EMITTED_MESSAGE_SECTION_SELECTOR}${EMITTED_MESSAGE_TYPE_SELECTOR[kind]}`, [
+      `${selectedTraceId}${iconEmissionDirection}${identifier}`
+    ])
+    : span(EMITTED_MESSAGE_SECTION_SELECTOR, [])
+}
+
+
+// TODO : the default must display for each combinator also the parameters taken from settings (from tree_Sruct_msg)
+export const defaultDisplaySettings = {
+  combinators : {
+    [LISTOF_COMBINATOR] : (strPath, treeStructureTraceMsg, selectedTraceMsg)=> {
+      // TODO : pass the settings in treeStructureTraceMsg
+      return VTree
+    },
+    [FOREACH_COMBINATOR] : void 0,
+    [SWITCH_COMBINATOR] : void 0,
+    [ROUTING_COMBINATOR] : void 0,
+    [COMBINE_COMBINATOR] : void 0,
+    [INJECT_SOURCES_COMBINATOR] : void 0,
+    [INJECT_LOCAL_STATE_COMBINATOR] : void 0,
+    [INJECT_CIRCULAR_SOURCES_COMBINATOR] : void 0,
+    [INJECT_SOURCES_AND_SETTINGS_COMBINATOR] : void 0,
+    [IN_SLOT_COMBINATOR] : void 0,
+    [PIPE_COMBINATOR] : void 0,
+  },
+  channels :{
+    [DOM_SINK] : void 0
+  }
+};
 
 /**
  * Applies a `fmap` function to the component tree, keeping the component tree data structure

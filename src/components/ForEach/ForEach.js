@@ -8,6 +8,7 @@ import * as Rx from "rx";
 import {
   combinatorNameInSettings, componentNameInSettings, reconstructComponentTree
 } from "../../../tracing/src/helpers"
+import { FOREACH_COMBINATOR } from "../properties"
 
 const $ = Rx.Observable;
 
@@ -89,5 +90,5 @@ export function ForEach(forEachSettings, componentTree) {
   assertContract(hasAtLeastOneChildComponent, [componentTree], `ForEach : ForEach combinator must at least have one child component to switch to!`);
   assertContract(isForEachSettings, [null, forEachSettings], `ForEach : ForEach combinator must have 'from' and 'as' property which are strings!`);
 
-  return m(forEachSpec, set(combinatorNameInSettings, 'ForEach', forEachSettings), componentTree)
+  return m(forEachSpec, set(combinatorNameInSettings, FOREACH_COMBINATOR, forEachSettings), componentTree)
 }

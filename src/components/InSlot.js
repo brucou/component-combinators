@@ -3,6 +3,7 @@ import { m } from "./m"
 import { combinatorNameInSettings } from "../../tracing/src/helpers"
 import { set } from 'ramda'
 import { isArray } from "../../contracts/src"
+import { IN_SLOT_COMBINATOR } from "./properties"
 
 // NOTE ADR: we use `m` here, we have to, to benefit from the tracing functionality that m offers.
 /**
@@ -17,7 +18,7 @@ export function InSlot(slotName, arrComponent) {
   }
 
   return function mComponentInSlot(sources, settings) {
-    const sinks = m({}, set(combinatorNameInSettings, 'InSlot', {}), arrComponent)(sources, settings);
+    const sinks = m({}, set(combinatorNameInSettings, IN_SLOT_COMBINATOR, {}), arrComponent)(sources, settings);
     const vNodes$ = sinks[DOM_SINK];
 
     sinks[DOM_SINK] = vNodes$ && vNodes$.do(vNode => {
